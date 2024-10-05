@@ -13,12 +13,16 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Añadir una luz puntual para simular el Sol
-const light = new THREE.PointLight(0xffffff, 2, 1000);
-light.position.set(0, 0, 0); // El Sol está en el origen
-scene.add(light);
+// Añadir una luz ambiental para iluminar ligeramente toda la escena
+const ambientLight = new THREE.AmbientLight(0x9999999); // Luz suave
+scene.add(ambientLight);
 
-// Añadir el Sol
+// Añadir una luz puntual para simular el Sol
+const sunLight = new THREE.PointLight(0xffffff, 1.5, 0); // Intensidad ajustada
+sunLight.position.set(0, 0, 0); // El Sol está en el origen
+scene.add(sunLight);
+
+// Añadir el Sol con MeshBasicMaterial para que no responda a las luces
 const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
 const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 const sun = new THREE.Mesh(sunGeometry, sunMaterial);
@@ -208,9 +212,9 @@ function createOrbit(planet) {
 
 // Añadir planetas y sus órbitas a la escena
 planets.forEach(planet => {
-    // Crear mesh del planeta
+    // Crear mesh del planeta con MeshPhongMaterial para mejor interacción con luces
     const planetGeometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-    const planetMaterial = new THREE.MeshStandardMaterial({ color: planet.color });
+    const planetMaterial = new THREE.MeshPhongMaterial({ color: planet.color });
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
     planet.mesh = planetMesh;
     scene.add(planetMesh);
@@ -235,7 +239,9 @@ function animate() {
         planet.mesh.position.set(position.x, position.y, position.z); // Mapeo correcto a X, Y, Z
 
         // Rotación propia alrededor del eje Y
-        planet.mesh.rotateOnAxis(new THREE.Vector3(0, 1, 0), (0.01 / planet.rotationPeriod));
+        const rotationSpeed = (0.01 / Math.abs(planet.rotationPeriod)); // Ajustar la velocidad
+        const rotationAxis = new THREE.Vector3(0, 1, 0); // Eje Y
+        planet.mesh.rotateOnAxis(rotationAxis, rotationSpeed);
     });
 
     time += 1; // Incrementar tiempo (ajustar para velocidad orbital)
