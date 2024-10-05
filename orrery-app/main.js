@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-
 // Set up the scene, camera, and renderer
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -16,7 +15,7 @@ light.position.set(0, 0, 0); // Sun at the origin
 scene.add(light);
 
 // Add the Sun
-const sunGeometry = new THREE.SphereGeometry(2, 32, 32);
+const sunGeometry = new THREE.SphereGeometry(.2, 32, 32);
 const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
 const sun = new THREE.Mesh(sunGeometry, sunMaterial);
 scene.add(sun);
@@ -339,4 +338,3 @@ window.addEventListener('resize', () => {
     camera.aspect = width / height;
     camera.updateProjectionMatrix();
 });
-s
