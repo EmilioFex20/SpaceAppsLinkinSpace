@@ -154,6 +154,21 @@ function animate() {
     controls.update();
     
     renderer.render(scene, camera);
+
+}
+
+function ShowInfo(){
+    const div=document.getElementById("inf");
+    const atributes=document.getElementById("atributes");
+
+    
+
+    if(div.style.display==="none")
+    {
+        div.style.display="block";
+    } else{
+        div.style.display="none";
+    }
 }
 
 animate();

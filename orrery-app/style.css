@@ -13,6 +13,14 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.information{
+  flex-direction: column;
+  height: 1000px;
+  width:300px;
+  border-color: #ffffff;
+  background-color: #1a1a1a;
+}
+
 a {
   font-weight: 500;
   color: #646cff;

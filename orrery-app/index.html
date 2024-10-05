@@ -12,9 +12,27 @@
       canvas {
         display: block;
       }
+
+      .information{
+  flex-direction: column;
+  height:200px;
+  width:200px;
+  background-color: black;
+}
+
+.text{
+  color:white;
+}
     </style>
   </head>
   <body>
+   
     <script type="module" src="/main.js"></script>
+    <div id="inf" class="information">
+      <h1 class="text" onclick="ShowInfo()">information</h1>
+      
+      <p  class="text" id="atributes"> Datos </p>
+
+    </div>
   </body>
 </html>
