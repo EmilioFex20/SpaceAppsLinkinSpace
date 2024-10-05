@@ -18,7 +18,7 @@ const ambientLight = new THREE.AmbientLight(0x9999999); // Luz suave
 scene.add(ambientLight);
 
 // Añadir una luz puntual para simular el Sol
-const sunLight = new THREE.PointLight(0xffffff, 1.5, 0); // Intensidad ajustada
+const sunLight = new THREE.PointLight(0xffffff, 2, 0); // Intensidad ajustada
 sunLight.position.set(0, 0, 0); // El Sol está en el origen
 scene.add(sunLight);
 
@@ -187,45 +187,60 @@ function calculatePosition(planet, time) {
     return { x: xFinal, y: yFinal, z: zInclined };
 }
 
-// Función para crear una órbita
+// Función para crear una órbita elíptica correctamente orientada
 function createOrbit(planet) {
     const curve = new THREE.EllipseCurve(
         0, 0, // Centro de la elipse
         planet.semiMajorAxis, planet.semiMajorAxis * Math.sqrt(1 - planet.eccentricity ** 2), // Radios X e Y
         0, 2 * Math.PI, // Ángulo de inicio y fin
         false, // Sentido horario
-        0 // Ángulo de rotación
+        0 // Ángulo de rotación inicial
     );
 
     const points = curve.getPoints(100);
     const geometry = new THREE.BufferGeometry().setFromPoints(points);
 
-    const material = new THREE.LineBasicMaterial({ color: 0xaaaaaa });
+    const material = new THREE.LineBasicMaterial({ color: 0xffffff }); // Líneas blancas
     const ellipse = new THREE.Line(geometry, material);
 
-    // Rotar la órbita para tener en cuenta la inclinación y la longitud del nodo ascendente
-    ellipse.rotation.x = toRadians(planet.inclination);
-    ellipse.rotation.z = toRadians(planet.longitudeOfAscendingNode);
+    // Crear un Object3D para aplicar las rotaciones en el orden correcto
+    const orbit = new THREE.Object3D();
 
-    return ellipse;
+    // Rotar por la longitud del nodo ascendente (Ω) alrededor del eje Z
+    orbit.rotation.z = toRadians(planet.longitudeOfAscendingNode);
+
+    // Rotar por la inclinación (i) alrededor del eje X
+    orbit.rotation.x = toRadians(planet.inclination);
+
+    // Rotar por el argumento del periapsis (ω) alrededor del eje Z
+    ellipse.rotation.z = toRadians(planet.argumentOfPeriapsis);
+
+    // Añadir la elipse al Object3D
+    orbit.add(ellipse);
+
+    // Añadir el Object3D a la escena
+    scene.add(orbit);
 }
 
 // Añadir planetas y sus órbitas a la escena
 planets.forEach(planet => {
     // Crear mesh del planeta con MeshPhongMaterial para mejor interacción con luces
     const planetGeometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-    const planetMaterial = new THREE.MeshPhongMaterial({ color: planet.color });
+    const planetMaterial = new THREE.MeshPhongMaterial({
+        color: planet.color,
+        shininess: 100,
+        specular: 0x333333 // Añadir especularidad
+    });
     const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
     planet.mesh = planetMesh;
     scene.add(planetMesh);
 
     // Crear órbita y añadir a la escena
-    const orbit = createOrbit(planet);
-    scene.add(orbit);
+    createOrbit(planet);
 });
 
 // Configurar la posición inicial de la cámara
-camera.position.set(0, 50, 100);
+camera.position.set(0, 50, 300); // Posición más alejada para visualizar todas las órbitas
 controls.update();
 
 // Bucle de animación para actualizar la posición de los planetas
@@ -250,6 +265,30 @@ function animate() {
     controls.update();
     renderer.render(scene, camera);
 }
+// Crear un sistema de partículas para el fondo de estrellas
+const starsCount = 10000;
+const starsGeometryParticles = new THREE.BufferGeometry();
+const starsPositions = new Float32Array(starsCount * 3);
+
+for (let i = 0; i < starsCount; i++) {
+    const x = THREE.MathUtils.randFloatSpread(1000); // Distribución aleatoria
+    const y = THREE.MathUtils.randFloatSpread(1000);
+    const z = THREE.MathUtils.randFloatSpread(1000);
+    starsPositions[i * 3] = x;
+    starsPositions[i * 3 + 1] = y;
+    starsPositions[i * 3 + 2] = z;
+}
+
+starsGeometryParticles.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+
+const starsMaterialParticles = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.5,
+    transparent: true
+});
+
+const starParticles = new THREE.Points(starsGeometryParticles, starsMaterialParticles);
+scene.add(starParticles);
 
 animate();
 
