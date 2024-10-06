@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
 // ---------------------------------------------
 //           Clase Trajectory
 // ---------------------------------------------
@@ -16,6 +16,8 @@ function Trajectory(name, smA, oI, aP, oE, aN, mAe, Sidereal) {
     this.position = [0, 0, 0];
     this.time = 0;
 }
+
+
 
 // ---------------------------------------------
 //        Propagador de Trayectorias
@@ -74,22 +76,37 @@ function traceOrbits(scene, heavenlyBodies) {
 // ---------------------------------------------
 //             Configuración de Three.js
 // ---------------------------------------------
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+camera.position.set(0, 0, 0);
+
+const orbit= new OrbitControls(camera, renderer.domElement);
+
+
+
+
+
+
+
+
+
 
 // Ejemplo de cuerpos celestes
-// Ejemplo de cuerpos celestes
-const heavenlyBodies = [
-  new Trajectory("Mercurio", 57.91, 7.0, 29.0, 0.2056, 48.0, 174.0, 0.2408467),
-  new Trajectory("Venus", 108.2, 3.4, 54.0, 0.0068, 76.0, 50.0, 0.61519726),
-  new Trajectory("Tierra", 149.6, 0.0, 102.0, 0.0167, 0.0, 0.0, 1.0),  // Tierra
-  new Trajectory("Marte", 227.9, 1.85, 286.5, 0.0934, 49.6, 19.4, 1.8808), // Marte
-  new Trajectory("Júpiter", 778.5, 1.3, 14.3, 0.0484, 100.5, 20.0, 11.862), // Júpiter
-  // Agrega más cuerpos celestes según sea necesario
-];
+// Definición de planetas usando los elementos orbitales de la tabla
+var heavenlyBodies = [];
+
+heavenlyBodies.push(new Trajectory("Mercury", 0.38709843, 7.00559432, 77.45771895, 0.20563661, 48.33961819, 252.25166724 - 77.45771895, 87.969));  // Periodo de Mercurio en días terrestres
+heavenlyBodies.push(new Trajectory("Venus", 0.72332102, 3.39777545, 131.76755713, 0.00676399, 76.67261496, 181.97970850 - 131.76755713, 224.701)); // Periodo de Venus en días terrestres
+heavenlyBodies.push(new Trajectory("Earth", 1.00000018, 0.00054346, 102.93005885, 0.01673163, -5.11260389, 100.46691572 - 102.93005885, 365.256)); // Periodo de la Tierra
+heavenlyBodies.push(new Trajectory("Mars", 1.52371243, 1.85181869, -23.91744784, 0.09336511, 49.71320984, -4.56813164 - (-23.91744784), 686.980)); // Periodo de Marte en días
+heavenlyBodies.push(new Trajectory("Jupiter", 5.20248019, 1.29861416, 14.27495244, 0.04853590, 100.29282654, 34.33479152 - 14.27495244, 4332.59));  // Periodo de Júpiter en días
+heavenlyBodies.push(new Trajectory("Saturn", 9.54149883, 2.49424102, 92.86136063, 0.05550825, 113.63998702, 50.07571329 - 92.86136063, 10759.22));  // Periodo de Saturno en días
+heavenlyBodies.push(new Trajectory("Uranus", 19.18797948, 0.77298127, 172.43404441, 0.04685740, 73.96250215, 314.20276625 - 172.43404441, 30685.4)); // Periodo de Urano en días
+heavenlyBodies.push(new Trajectory("Neptune", 30.06952752, 1.77005520, 46.68158724, 0.00895439, 131.78635853, 304.22289287 - 46.68158724, 60190.03)); // Periodo de Neptuno en días
 
 
 // Traza las órbitas
@@ -97,12 +114,13 @@ traceOrbits(scene, heavenlyBodies);
 
 // Posiciona la cámara
 camera.position.z = 150;
-
+orbit.update();
 // Función de animación
 function animate() {
     requestAnimationFrame(animate);
     renderer.render(scene, camera);
 }
+
 
 // Inicia la animación
 animate();
