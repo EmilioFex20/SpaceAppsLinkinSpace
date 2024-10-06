@@ -14,7 +14,7 @@ camera.position.set(0, 200, 800); // Aumentar el zoom inicial para evitar hacer 
 controls.update();
 
 // Añadir luces
-var sunLight = new THREE.PointLight(0xffffff, 3, 10000); // Aumentar la intensidad y alcance
+var sunLight = new THREE.PointLight(0xffffff, 2, 5000); // Aumentar el alcance de la luz
 sunLight.position.set(0, 0, 0); // Colocar la luz en el centro (el sol)
 scene.add(sunLight);
 
@@ -28,17 +28,15 @@ const sunTexture = textureLoader.load('/textures/sun.jpg'); // Asegúrate de que
 
 // Crear el Sol
 function createSun() {
-  var sunDiameter = 1391000 * 0.00001; // Diámetro del Sol en km a escala
-  var sunGeometry = new THREE.SphereGeometry(sunDiameter / 2, 32, 32); // Radio = diámetro/2
-  var sunMaterial = new THREE.MeshBasicMaterial({ 
-    map: sunTexture
-  });
-  var sun = new THREE.Mesh(sunGeometry, sunMaterial);
-  sun.position.set(0, 0, 0);
-  scene.add(sun);
+    var sunGeometry = new THREE.SphereGeometry(10, 32, 32); // Tamaño del Sol
+    var sunMaterial = new THREE.MeshBasicMaterial({ 
+      map: sunTexture
+  }); // Color amarillo para el Sol
+    var sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    sun.position.set(0, 0, 0);
+    scene.add(sun);
 }
-
-var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xd6d6d6 });
+var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
 // Material para los planetas
 
@@ -52,8 +50,7 @@ var planetSizes = {
   Jupiter: 139820,
   Saturn: 116460,
   Uranus: 50724,
-  Neptune: 49244,
-  Moon: 3474,
+  Neptune: 49244
 };
 // Función para crear un fondo de estrellas
 function createStarfield(numStars) {
@@ -81,9 +78,9 @@ const starfield = createStarfield(10000); // Cambia el número para más o menos
 scene.add(starfield);
 
 // Factores de escala
-var distanceScale = 100; // Reducir el factor de escala para las distancias orbitales
-var sizeScale = 0.0001;   // Aumentar el tamaño de los planetas para que sean más visibles
-var asteroidScale = .022  
+var distanceScale = 100; // Escala para las distancias orbitales
+var sizeScale = 0.001;  // Escala para los tamaños de los planetas
+var asteroidScale = .1  
 
 
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
@@ -96,16 +93,7 @@ var orbitalElements = [
   { name: "Jupiter", a: 5.20248019, e: 0.04853590, i: 1.29861416, long_peri: 14.27495244, long_node: 100.29282654, period: 4332.59, texture:"./textures/jupiter.jpg" },
   { name: "Saturn", a: 9.54149883, e: 0.05550825, i: 2.49424102, long_peri: 92.86136063, long_node: 113.63998702, period: 10759.22, texture:"./textures/saturn.jpg" },
   { name: "Uranus", a: 19.18797948, e: 0.04685740, i: 0.77298127, long_peri: 172.43404441, long_node: 73.96250215, period: 30688.5, texture:"./textures/uranus.jpg" },
-  { name: "Neptune", a: 30.06952752, e: 0.00895439, i: 1.77005520, long_peri: 46.68158724, long_node: 131.78635853, period: 60182, texture:"./textures/neptune.jpg" },
-  { name: "Moon",
-    a: 0.0015, // Semi-eje mayor en UA, cerca de la órbita de la Tierra
-    e: 0.0549, // Eccentricidad
-    i: 5.145, // Inclinación (en grados)
-    long_peri: 318.15, // Longitud del perihelio (en grados)
-    long_node: 125.08, // Longitud del nodo ascendente (en grados)
-    period: 27.32, // Periodo orbital (en días)
-    texture: "./textures/sun.jpg" // Ruta de la textura de la Luna
-  },
+  { name: "Neptune", a: 30.06952752, e: 0.00895439, i: 1.77005520, long_peri: 46.68158724, long_node: 131.78635853, period: 60182, texture:"./textures/neptune.jpg" }
 ];
 
 // Conversión de grados a radianes
@@ -136,7 +124,7 @@ Trajectory.prototype.propagate = function (trueAnomaly) {
   var y = r * (Math.cos(this.argumentOfPerigee + trueAnomaly) * Math.sin(this.longitudeOfAscendingNode) +
                Math.sin(this.argumentOfPerigee + trueAnomaly) * Math.cos(this.inclination) * Math.cos(this.longitudeOfAscendingNode));
   var z = r * (Math.sin(this.argumentOfPerigee + trueAnomaly) * Math.sin(this.inclination));
-  return [x * distanceScale, y * distanceScale, z * distanceScale]; // Multiplicar por 100 para hacer más visibles las órbitas
+  return [x * 100, y * 100, z * 100]; // Multiplicar por 100 para hacer más visibles las órbitas
 };
 
 
@@ -227,6 +215,7 @@ function traceOrbits() {
     });
 }
 
+
 // Añadir planetas a la escenafunction addPlanets() {
 // Añadir planetas a la escena
 function addPlanets() {
@@ -256,13 +245,13 @@ function addPlanets() {
 
 // Animación para actualizar las posiciones de los planetas
 function animate() {
-  requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 
-  // Actualizar posiciones de los planetas
-  heavenlyBodies.forEach(body => {
-      var planet = scene.getObjectByName(body.name);
-      var newPos = body.propagate(body.trueAnomaly);
-      planet.position.set(newPos[0], newPos[1], newPos[2]);
+    // Actualizar posiciones de los planetas
+    heavenlyBodies.forEach(body => {
+        var planet = scene.getObjectByName(body.name);
+        var newPos = body.propagate(body.trueAnomaly);
+        planet.position.set(newPos[0], newPos[1], newPos[2]);
 
         // Incrementar la anomalía verdadera para animar la órbita
         body.trueAnomaly += (2 * Math.PI / body.period) * 0.1; // Ajustar la velocidad según el periodo
@@ -417,31 +406,34 @@ function onDocumentMouseDown(event) {
 // Agregar el evento de clic al documento
 window.addEventListener('mousedown', onDocumentMouseDown, false);
 
-  // Actualizar posición de la Luna en relación a la Tierra
-  var earthMesh = scene.getObjectByName("Earth");
-  var moonMesh = scene.getObjectByName("Moon");
-  
-  // Calcular la posición de la Luna respecto a la Tierra
-  var moonInitialPos = heavenlyBodies[1].propagate(heavenlyBodies[1].trueAnomaly); // Luna
-  moonMesh.position.set(
-      earthMesh.position.x + moonInitialPos[0]/3.5, // Multiplicar por un factor de escala para que se vea más grande
-      earthMesh.position.y + moonInitialPos[1]/3.5,
-      earthMesh.position.z + moonInitialPos[2]/3.5
-  );
+    // Actualizar posiciones de los asteroides
+    scene.children.forEach(obj => {
+        if (obj.name && obj.name !== 'Sun' && obj.period) { // Identificar solo los asteroides
+            var r = (obj.semiMajorAxis * (1 - obj.eccentricity ** 2)) / (1 + obj.eccentricity * Math.cos(obj.trueAnomaly));
+            var x = r * (Math.cos(obj.longPeri + obj.trueAnomaly) * Math.cos(obj.longNode) -
+                         Math.sin(obj.longPeri + obj.trueAnomaly) * Math.cos(obj.inclination) * Math.sin(obj.longNode));
+            var y = r * (Math.cos(obj.longPeri + obj.trueAnomaly) * Math.sin(obj.longNode) +
+                         Math.sin(obj.longPeri + obj.trueAnomaly) * Math.cos(obj.inclination) * Math.cos(obj.longNode));
+            var z = r * (Math.sin(obj.longPeri + obj.trueAnomaly) * Math.sin(obj.inclination));
 
-  // Incrementar la anomalía verdadera para animar la órbita de la Luna
-  heavenlyBodies[1].trueAnomaly += (2 * Math.PI / heavenlyBodies[1].period) * 0.1; // Ajustar la velocidad según el periodo
-  if (heavenlyBodies[1].trueAnomaly > 2 * Math.PI) {
-      heavenlyBodies[1].trueAnomaly -= 2 * Math.PI;
-  }
+            obj.position.set(x * 100, y * 100, z * 100);
 
-  controls.update();
-  renderer.render(scene, camera);
+            // Incrementar la anomalía verdadera para animar la órbita del asteroide
+            obj.trueAnomaly += (2 * Math.PI / obj.period) * 0.1; // Ajustar la velocidad según el periodo
+            if (obj.trueAnomaly > 2 * Math.PI) {
+                obj.trueAnomaly -= 2 * Math.PI;
+            }
+
+            // Log de depuración
+            
+        }
+    });
+    controls.update();
+    renderer.render(scene, camera);
 }
-
 // Llamadas a las funciones
 createSun();  // Añadir el sol
-//addAsteroids();
+addAsteroids();
 traceOrbits(); // Añadir las órbitas primero
 addPlanets();  // Después añadir los planetas
 animate();
