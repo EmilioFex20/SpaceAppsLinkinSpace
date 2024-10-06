@@ -81,11 +81,16 @@ renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Ejemplo de cuerpos celestes
+// Ejemplo de cuerpos celestes
 const heavenlyBodies = [
-    new Trajectory("Mercurio", 57.91, 7.0, 29.0, 0.2056, 48.0, 174.0, 0.2408467),
-    new Trajectory("Venus", 108.2, 3.4, 54.0, 0.0068, 76.0, 50.0, 0.61519726),
-    // Agrega más cuerpos celestes según sea necesario
+  new Trajectory("Mercurio", 57.91, 7.0, 29.0, 0.2056, 48.0, 174.0, 0.2408467),
+  new Trajectory("Venus", 108.2, 3.4, 54.0, 0.0068, 76.0, 50.0, 0.61519726),
+  new Trajectory("Tierra", 149.6, 0.0, 102.0, 0.0167, 0.0, 0.0, 1.0),  // Tierra
+  new Trajectory("Marte", 227.9, 1.85, 286.5, 0.0934, 49.6, 19.4, 1.8808), // Marte
+  new Trajectory("Júpiter", 778.5, 1.3, 14.3, 0.0484, 100.5, 20.0, 11.862), // Júpiter
+  // Agrega más cuerpos celestes según sea necesario
 ];
+
 
 // Traza las órbitas
 traceOrbits(scene, heavenlyBodies);
