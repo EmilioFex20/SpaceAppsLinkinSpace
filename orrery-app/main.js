@@ -185,24 +185,28 @@ function traceOrbits() {
 // Añadir planetas a la escenafunction addPlanets() {
 // Añadir planetas a la escena
 function addPlanets() {
-  heavenlyBodies.forEach(body => {
-    // Obtener el tamaño del planeta y aplicarle la escala
-    var planetDiameter = planetSizes[body.name] * sizeScale;
-    const planetTexture = textureLoader.load(body.texture); 
-    // Geometría del planeta (usando el diámetro a escala)
-    var planetGeometry = new THREE.SphereGeometry(planetDiameter / 2, 32, 32); // Radio = diámetro/2
-
-    var planetMaterial = new THREE.MeshBasicMaterial({
-      map: planetTexture, // Cargar la textura del planeta
+    heavenlyBodies.forEach(body => {
+      // Obtener el tamaño del planeta y aplicarle la escala
+      var planetDiameter = planetSizes[body.name] * sizeScale;
+      const planetTexture = textureLoader.load(body.texture); 
+      // Geometría del planeta (usando el diámetro a escala)
+      var planetGeometry = new THREE.SphereGeometry(planetDiameter / 2, 32, 32); // Radio = diámetro/2
+  
+      var planetMaterial = new THREE.MeshBasicMaterial({
+        map: planetTexture, // Cargar la textura del planeta
+      });
+      var planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+  
+      // Corregir la orientación de la textura
+      planetMesh.rotation.x = Math.PI / 2; // Rotar 90 grados en el eje Y
+  
+      // Posición inicial del planeta
+      var initialPos = body.propagate(body.trueAnomaly);
+      planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
+      planetMesh.name = body.name;
+      scene.add(planetMesh);
     });
-    var planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
-
-    // Posición inicial del planeta
-    var initialPos = body.propagate(body.trueAnomaly);
-    planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
-    planetMesh.name = body.name;
-    scene.add(planetMesh);
-  });}
+  }  
 
 
 // Animación para actualizar las posiciones de los planetas
