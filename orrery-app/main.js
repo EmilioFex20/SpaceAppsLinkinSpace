@@ -1,29 +1,55 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000); // Aumentar el "far" para ver objetos lejanos
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
 // Crear la instancia de OrbitControls
 var controls = new OrbitControls(camera, renderer.domElement);
-camera.position.set(0, 200, 400);
+camera.position.set(0, 200, 800); // Aumentar el zoom inicial para evitar hacer zoom out demasiado
 controls.update();
 
-var light = new THREE.PointLight(0xffffff, 1);
-light.position.set(0, 0, 0); // Colocar la luz en el centro (el sol)
-scene.add(light);
-scene.add(new THREE.AmbientLight(0x404040)); // Luz ambiental
+// Añadir luces
+var sunLight = new THREE.PointLight(0xffffff, 2, 5000); // Aumentar el alcance de la luz
+sunLight.position.set(0, 0, 0); // Colocar la luz en el centro (el sol)
+scene.add(sunLight);
+
+var ambientLight = new THREE.AmbientLight(0x404040, 2); // Aumentar la intensidad de la luz ambiental
+scene.add(ambientLight);
+
+// Crear el Sol
+function createSun() {
+    var sunGeometry = new THREE.SphereGeometry(10, 32, 32); // Tamaño del Sol
+    var sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 }); // Color amarillo para el Sol
+    var sun = new THREE.Mesh(sunGeometry, sunMaterial);
+    sun.position.set(0, 0, 0);
+    scene.add(sun);
+}
 
 // Material para los planetas
 var planetMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 
+// Datos de los diámetros reales (en km)
+var planetSizes = {
+  Mercury: 4880,
+  Venus: 12104,
+  Earth: 12742,
+  Mars: 6779,
+  Jupiter: 139820,
+  Saturn: 116460,
+  Uranus: 50724,
+  Neptune: 49244
+};
+
+// Factores de escala
+var distanceScale = 100; // Escala para las distancias orbitales
+var sizeScale = 0.0005;  // Escala para los tamaños de los planetas
+
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
 // L (mean longitude), long.peri. (longitude of perihelion), long.node. (longitude of ascending node)
-// Fuente: Tabla proporcionada
 var orbitalElements = [
   { name: "Mercury", a: 0.38709843, e: 0.20563661, i: 7.00559432, long_peri: 77.45771895, long_node: 48.33961819, period: 87.97 },
   { name: "Venus", a: 0.72332102, e: 0.00676399, i: 3.39777545, long_peri: 131.76755713, long_node: 76.67261496, period: 224.70 },
@@ -79,6 +105,7 @@ function traceOrbits() {
     geometry = new THREE.BufferGeometry();
     var positions = [];
     for (var i = 0; i <= 2 * Math.PI; i += 0.1) {
+      // Obtener la posición del planeta en ese ángulo
       var pos = body.propagate(i);
       positions.push(pos[0], pos[1], pos[2]);
     }
@@ -91,8 +118,14 @@ function traceOrbits() {
 // Añadir planetas a la escena
 function addPlanets() {
   heavenlyBodies.forEach(body => {
-    var planetGeometry = new THREE.SphereGeometry(2, 32, 32); // Tamaño de los planetas
+    // Obtener el tamaño del planeta y aplicarle la escala
+    var planetDiameter = planetSizes[body.name] * sizeScale;
+
+    // Geometría del planeta (usando el diámetro a escala)
+    var planetGeometry = new THREE.SphereGeometry(planetDiameter / 2, 32, 32); // Radio = diámetro/2
     var planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+
+    // Posición inicial del planeta
     var initialPos = body.propagate(body.trueAnomaly);
     planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
     planetMesh.name = body.name;
@@ -121,6 +154,7 @@ function animate() {
 }
 
 // Llamadas a las funciones
-traceOrbits();
-addPlanets();
-animate(); 
+createSun();  // Añadir el sol
+traceOrbits(); // Añadir las órbitas primero
+addPlanets();  // Después añadir los planetas
+animate();
