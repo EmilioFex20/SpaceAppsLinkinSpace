@@ -28,6 +28,26 @@ const sunLight = new THREE.PointLight(0xffffff, 5, 0); // Intensidad aumentada
 sunLight.position.set(0, 0, 0); // El Sol está en el origen
 scene.add(sunLight);
 
+// Crear el Sol con textura
+const textureLoader = new THREE.TextureLoader();
+const sunTexture = textureLoader.load('/textures/sun.jpg'); // Asegúrate de que la ruta sea correcta
+
+const sunGeometry = new THREE.SphereGeometry(2, 64, 64);
+const sunMaterial = new THREE.MeshBasicMaterial({ 
+    map: sunTexture
+});
+const sun = new THREE.Mesh(sunGeometry, sunMaterial);
+scene.add(sun);
+
+// Configurar OrbitControls para permitir el movimiento de la cámara con el ratón
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; // Movimiento suave de la cámara
+controls.dampingFactor = 0.05;
+controls.enableZoom = true; // Permitir zoom con la rueda del ratón
+
+// Definir un factor de escala para los planetas
+const scaleFactor = 5; // Ajusta este valor para cambiar el tamaño de los planetas
+
 
 
 
