@@ -259,6 +259,141 @@ function animate() {
             body.trueAnomaly -= 2 * Math.PI;
         }
     });
+// Función para manejar clics en los planetas
+function onDocumentMouseDown(event) {
+    event.preventDefault();
+
+    // Calcular la posición del mouse en el espacio de la pantalla
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Crear un rayo a partir de la cámara y la posición del mouse
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calcular objetos intersectados
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    if (intersects.length > 0) {
+        const planet = intersects[0].object;
+        
+        // Si el objeto es un planeta, hacer zoom y seguirlo
+        if (planet.name) {
+            const targetPosition = planet.position.clone();
+            zoomToPlanet(targetPosition, planet);
+        }
+    }
+}
+
+// Función para hacer zoom en un planeta
+function zoomToPlanet(targetPosition, planet) {
+    // Ajustar la posición de la cámara para hacer zoom en el planeta
+    const zoomFactor = 3; // Factor de zoom
+    const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200); // Offset para alejar un poco la cámara
+    camera.position.copy(targetPosition).add(offset);
+    
+    // Configurar controls para seguir el planeta
+    controls.target.copy(targetPosition);
+    
+    // Animar la cámara hacia la posición del planeta
+    const duration = 1000; // Duración de la animación en milisegundos
+    const startPosition = camera.position.clone();
+    const startTime = performance.now();
+
+    function animateZoom() {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Interpolación lineal para el movimiento
+        camera.position.lerpVectors(startPosition, targetPosition.clone().add(offset), progress);
+        
+        if (progress < 1) {
+            requestAnimationFrame(animateZoom);
+        }
+    }
+    
+    animateZoom();
+}
+// Variable para almacenar la posición original de la cámara
+const originalCameraPosition = camera.position.clone();
+const originalCameraTarget = controls.target.clone();
+let backButton;
+
+// Función para crear el botón de regreso
+function createBackButton() {
+    backButton = document.createElement('button');
+    backButton.innerText = 'Regresar';
+    backButton.style.position = 'absolute';
+    backButton.style.top = '20px';
+    backButton.style.left = '20px';
+    backButton.style.zIndex = '10';
+    document.body.appendChild(backButton);
+
+    backButton.addEventListener('click', () => {
+        zoomOutFromPlanet();
+    });
+}
+
+// Función para hacer zoom fuera del planeta
+function zoomOutFromPlanet() {
+    // Restablecer la posición de la cámara a la original
+    const zoomFactor = 3; // Factor de zoom
+    const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200);
+    
+    // Animar la cámara hacia la posición original
+    const duration = 1000; // Duración de la animación en milisegundos
+    const startPosition = camera.position.clone();
+    const startTime = performance.now();
+
+    function animateZoomOut() {
+        const elapsed = performance.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Interpolación lineal para el movimiento
+        camera.position.lerpVectors(startPosition, originalCameraPosition.clone().add(offset), progress);
+        
+        if (progress < 1) {
+            requestAnimationFrame(animateZoomOut);
+        } else {
+            // Después de completar el zoom, eliminar el botón
+            document.body.removeChild(backButton);
+            backButton = null;
+        }
+    }
+
+    animateZoomOut();
+}
+
+// Modificar la función de clic en planetas para mostrar el botón
+function onDocumentMouseDown(event) {
+    event.preventDefault();
+
+    // Calcular la posición del mouse en el espacio de la pantalla
+    const mouse = new THREE.Vector2();
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Crear un rayo a partir de la cámara y la posición del mouse
+    const raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calcular objetos intersectados
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    if (intersects.length > 0) {
+        const planet = intersects[0].object;
+        
+        // Si el objeto es un planeta, hacer zoom y seguirlo
+        if (planet.name) {
+            const targetPosition = planet.position.clone();
+            zoomToPlanet(targetPosition, planet);
+            createBackButton(); // Crear el botón de regreso
+        }
+    }
+}
+// Agregar el evento de clic al documento
+window.addEventListener('mousedown', onDocumentMouseDown, false);
 
     // Actualizar posiciones de los asteroides
     scene.children.forEach(obj => {
