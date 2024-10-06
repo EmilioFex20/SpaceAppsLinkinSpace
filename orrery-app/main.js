@@ -247,6 +247,15 @@ function animate() {
     controls.update();
     renderer.render(scene, camera);
 }
+
+window.addEventListener('resize', () => {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  renderer.setSize(width, height);
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+});
+
 // Llamadas a las funciones
 createSun();  // Añadir el sol
 addAsteroids();
