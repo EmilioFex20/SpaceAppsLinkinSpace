@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
+
+
 // Crear la escena, cámara y renderer
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(
@@ -222,6 +224,8 @@ function createOrbit(planet) {
     scene.add(orbit);
 }
 
+
+
 // Añadir planetas y sus órbitas a la escena
 planets.forEach(planet => {
     // Crear mesh del planeta con MeshPhongMaterial para mejor interacción con luces
@@ -238,6 +242,8 @@ planets.forEach(planet => {
     // Crear órbita y añadir a la escena
     createOrbit(planet);
 });
+
+
 
 // Configurar la posición inicial de la cámara
 camera.position.set(0, 50, 300); // Posición más alejada para visualizar todas las órbitas
@@ -264,22 +270,14 @@ function animate() {
     // Actualizar controles y renderizar la escena
     controls.update();
     renderer.render(scene, camera);
-
 }
 
-function ShowInfo(){
-    const div=document.getElementById("inf");
-    const atributes=document.getElementById("atributes");
 
-    
 
-    if(div.style.display==="none")
-    {
-        div.style.display="block";
-    } else{
-        div.style.display="none";
-    }
-}
+
+
+
+
 // Crear un sistema de partículas para el fondo de estrellas
 const starsCount = 10000;
 const starsGeometryParticles = new THREE.BufferGeometry();
@@ -304,6 +302,9 @@ const starsMaterialParticles = new THREE.PointsMaterial({
 
 const starParticles = new THREE.Points(starsGeometryParticles, starsMaterialParticles);
 scene.add(starParticles);
+
+const canvas=document.getElementsByClassName("canvas");
+
 
 animate();
 
