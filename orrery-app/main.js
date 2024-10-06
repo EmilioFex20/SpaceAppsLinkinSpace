@@ -4,6 +4,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 // Crear la escena
 const scene = new THREE.Scene();
 
+var heavenlyBodies = [] ;
+
 // Crear la cámara
 const camera = new THREE.PerspectiveCamera(
     75, // Campo de visión
@@ -209,15 +211,18 @@ const planets = [
         }
     }
 ];
-
-
-
-
-
-
 // Añadir planetas y sus órbitas a la escena
 planets.forEach(planet => {
     // Crear mesh del planeta con MeshPhongMaterial para mejor interacción con luces
+    celestialBody = new Trajectory(field.name.value,
+      field.semiMajorAxis.value,
+      field.inclination.value,
+      field.meanLongitude.value,
+      field.eccentricity.value,
+      field.longitudeOfAscendingNode.value,
+      field.meanAnomoly.value,
+      field.rotationPeriod.value);
+    heavenlyBodies.push(celestialBody) ;
     const planetGeometry = new THREE.SphereGeometry(planet.radius, 64, 64);
     const planetMaterial = new THREE.MeshPhongMaterial({
         map: textureLoader.load(planet.texture), // Cargar la textura del planeta
@@ -434,8 +439,7 @@ const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbi
 
     renderer.render(scene, camera);
 
-
-animate();
+    animate();
 
 // Manejar el redimensionamiento de la ventana
 window.addEventListener('resize', () => {
