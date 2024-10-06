@@ -48,8 +48,8 @@ var planetSizes = {
 
 // Factores de escala
 var distanceScale = 100; // Escala para las distancias orbitales
-var sizeScale = 0.0005;  // Escala para los tamaños de los planetas
-var asteroidScale = .2
+var sizeScale = 0.001;  // Escala para los tamaños de los planetas
+var asteroidScale = .1  
 
 
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
@@ -97,40 +97,51 @@ Trajectory.prototype.propagate = function (trueAnomaly) {
 
 
 function calculatePeriod(meanMotion) {
-    return 360 / meanMotion; // T = 360 / mean_motion
+    return meanMotion > 0 ? 360 / meanMotion : 1; // Asegurarse de que no sea cero o negativo
 }
 
 // Añadir asteroides a la escena
 function addAsteroids() {
-    asteroids.data.forEach(asteroid => {
-      const name = asteroid[0];
-      const eccentricity = parseFloat(asteroid[1]);
-      const semiMajorAxis = parseFloat(asteroid[2]);
-      const inclination = toRadians(parseFloat(asteroid[3]));
-      const longNode = toRadians(parseFloat(asteroid[4]));
-      const longPeri = toRadians(parseFloat(asteroid[5]));
-      const meanMotion = parseFloat(asteroid[7]);
-      const diameter = asteroid[8] ? parseFloat(asteroid[8]) : 2; // Si el diámetro es nulo, usar 2 km
-  
-      // Crear geometría y mesh del asteroide
-      var asteroidGeometry = new THREE.SphereGeometry(diameter * asteroidScale, 32, 32); // Escalado del diámetro
-      var asteroidMesh = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
-      
-      // Calcular posición inicial del asteroide
-      var period = calculatePeriod(meanMotion);
-      var trueAnomaly = 0;
-      var r = (semiMajorAxis * (1 - eccentricity ** 2)) / (1 + eccentricity * Math.cos(trueAnomaly));
-      var x = r * (Math.cos(longPeri + trueAnomaly) * Math.cos(longNode) -
-                   Math.sin(longPeri + trueAnomaly) * Math.cos(inclination) * Math.sin(longNode));
-      var y = r * (Math.cos(longPeri + trueAnomaly) * Math.sin(longNode) +
-                   Math.sin(longPeri + trueAnomaly) * Math.cos(inclination) * Math.cos(longNode));
-      var z = r * (Math.sin(longPeri + trueAnomaly) * Math.sin(inclination));
-  
-      asteroidMesh.position.set(x * 100, y * 100, z * 100);
-      asteroidMesh.name = name;
-      scene.add(asteroidMesh);
+    asteroids.data.forEach((asteroid, index) => { // Añadir índice como segundo parámetro
+        const name = asteroid[0] || `Asteroide_${index}`; // Asignar un nombre si no hay
+        const eccentricity = parseFloat(asteroid[1]);
+        const semiMajorAxis = parseFloat(asteroid[2]);
+        const inclination = toRadians(parseFloat(asteroid[3]));
+        const longNode = toRadians(parseFloat(asteroid[4]));
+        const longPeri = toRadians(parseFloat(asteroid[5]));
+        const meanMotion = asteroid[7] !== null ? parseFloat(asteroid[7]) : Math.random() * (1 - 0.1) + 0.1; // Valor aleatorio entre 0.1 y 1
+        const diameter = asteroid[8] ? parseFloat(asteroid[8]) : 2;
+
+        // Crear geometría y mesh del asteroide
+        var asteroidGeometry = new THREE.SphereGeometry(diameter * asteroidScale, 32, 32);
+        var asteroidMesh = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+
+        // Calcular el periodo y almacenar la anomalía verdadera
+        var period = calculatePeriod(meanMotion);
+        asteroidMesh.period = period;
+        asteroidMesh.trueAnomaly = 0;
+
+        // Calcular la posición inicial
+        var r = (semiMajorAxis * (1 - eccentricity ** 2)) / (1 + eccentricity * Math.cos(asteroidMesh.trueAnomaly));
+        var x = r * (Math.cos(longPeri + asteroidMesh.trueAnomaly) * Math.cos(longNode) -
+                     Math.sin(longPeri + asteroidMesh.trueAnomaly) * Math.cos(inclination) * Math.sin(longNode));
+        var y = r * (Math.cos(longPeri + asteroidMesh.trueAnomaly) * Math.sin(longNode) +
+                     Math.sin(longPeri + asteroidMesh.trueAnomaly) * Math.cos(inclination) * Math.cos(longNode));
+        var z = r * (Math.sin(longPeri + asteroidMesh.trueAnomaly) * Math.sin(inclination));
+
+        asteroidMesh.position.set(x * 100, y * 100, z * 100);
+        asteroidMesh.name = name; // Asignar nombre al asteroide
+
+        // Almacenar datos orbitales
+        asteroidMesh.eccentricity = eccentricity;
+        asteroidMesh.semiMajorAxis = semiMajorAxis;
+        asteroidMesh.inclination = inclination;
+        asteroidMesh.longNode = longNode;
+        asteroidMesh.longPeri = longPeri;
+
+        scene.add(asteroidMesh);
     });
-  }
+}
 
 
 // Crear objetos de trayectorias
@@ -140,20 +151,27 @@ orbitalElements.forEach(planet => {
 });
 // Añadir órbitas a la escena
 function traceOrbits() {
-  var geometry, material = new THREE.LineBasicMaterial({ color: 0xCCCCFF });
+    var geometry, material = new THREE.LineBasicMaterial({ color: 0xCCCCFF });
 
-  heavenlyBodies.forEach(body => {
-    geometry = new THREE.BufferGeometry();
-    var positions = [];
-    for (var i = 0; i <= 2 * Math.PI; i += 0.1) {
-      // Obtener la posición del planeta en ese ángulo
-      var pos = body.propagate(i);
-      positions.push(pos[0], pos[1], pos[2]);
-    }
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    var line = new THREE.Line(geometry, material);
-    scene.add(line);
-  });
+    heavenlyBodies.forEach(body => {
+        geometry = new THREE.BufferGeometry();
+        var positions = [];
+        const step = 0.01; // Pasos más pequeños para una línea más suave
+
+        // Recorrer de 0 a 2π para crear la elipse completa
+        for (var i = 0; i <= 2 * Math.PI; i += step) {
+            // Obtener la posición del planeta en ese ángulo
+            var pos = body.propagate(i);
+            positions.push(pos[0], pos[1], pos[2]);
+        }
+        // Asegúrate de que el primer punto se repita para cerrar la elipse
+        var firstPos = body.propagate(0);
+        positions.push(firstPos[0], firstPos[1], firstPos[2]); // Agregar el primer punto nuevamente
+
+        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        var line = new THREE.Line(geometry, material);
+        scene.add(line);
+    });
 }
 
 // Añadir planetas a la escena
@@ -176,24 +194,46 @@ function addPlanets() {
 
 // Animación para actualizar las posiciones de los planetas
 function animate() {
-  requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
 
-  heavenlyBodies.forEach(body => {
-    var planet = scene.getObjectByName(body.name);
-    var newPos = body.propagate(body.trueAnomaly);
-    planet.position.set(newPos[0], newPos[1], newPos[2]);
+    // Actualizar posiciones de los planetas
+    heavenlyBodies.forEach(body => {
+        var planet = scene.getObjectByName(body.name);
+        var newPos = body.propagate(body.trueAnomaly);
+        planet.position.set(newPos[0], newPos[1], newPos[2]);
 
-    // Incrementar la anomalía verdadera para animar la órbita
-    body.trueAnomaly += (2 * Math.PI / body.period) * 0.1; // Ajustar la velocidad según el periodo
-    if (body.trueAnomaly > 2 * Math.PI) {
-      body.trueAnomaly -= 2 * Math.PI;
-    }
-  });
+        // Incrementar la anomalía verdadera para animar la órbita
+        body.trueAnomaly += (2 * Math.PI / body.period) * 0.1; // Ajustar la velocidad según el periodo
+        if (body.trueAnomaly > 2 * Math.PI) {
+            body.trueAnomaly -= 2 * Math.PI;
+        }
+    });
 
-  controls.update();
-  renderer.render(scene, camera);
+    // Actualizar posiciones de los asteroides
+    scene.children.forEach(obj => {
+        if (obj.name && obj.name !== 'Sun' && obj.period) { // Identificar solo los asteroides
+            var r = (obj.semiMajorAxis * (1 - obj.eccentricity ** 2)) / (1 + obj.eccentricity * Math.cos(obj.trueAnomaly));
+            var x = r * (Math.cos(obj.longPeri + obj.trueAnomaly) * Math.cos(obj.longNode) -
+                         Math.sin(obj.longPeri + obj.trueAnomaly) * Math.cos(obj.inclination) * Math.sin(obj.longNode));
+            var y = r * (Math.cos(obj.longPeri + obj.trueAnomaly) * Math.sin(obj.longNode) +
+                         Math.sin(obj.longPeri + obj.trueAnomaly) * Math.cos(obj.inclination) * Math.cos(obj.longNode));
+            var z = r * (Math.sin(obj.longPeri + obj.trueAnomaly) * Math.sin(obj.inclination));
+
+            obj.position.set(x * 100, y * 100, z * 100);
+
+            // Incrementar la anomalía verdadera para animar la órbita del asteroide
+            obj.trueAnomaly += (2 * Math.PI / obj.period) * 0.1; // Ajustar la velocidad según el periodo
+            if (obj.trueAnomaly > 2 * Math.PI) {
+                obj.trueAnomaly -= 2 * Math.PI;
+            }
+
+            // Log de depuración
+            console.log(`Asteroide: ${obj.name}, Periodo: ${obj.period}, Anomalía: ${obj.trueAnomaly}`);
+        }
+    });
+    controls.update();
+    renderer.render(scene, camera);
 }
-
 // Llamadas a las funciones
 createSun();  // Añadir el sol
 addAsteroids();
