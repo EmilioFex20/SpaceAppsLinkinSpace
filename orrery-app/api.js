@@ -1,4 +1,4 @@
-const Asteroids={
+export const asteroids={
   "data": [
     [
       "Icarus",

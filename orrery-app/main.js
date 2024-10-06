@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { asteroids } from './api.js'; // Importar los datos de los asteroides
 
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000); // Aumentar el "far" para ver objetos lejanos
@@ -28,6 +29,7 @@ function createSun() {
     sun.position.set(0, 0, 0);
     scene.add(sun);
 }
+var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 
 // Material para los planetas
 var planetMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
@@ -47,6 +49,8 @@ var planetSizes = {
 // Factores de escala
 var distanceScale = 100; // Escala para las distancias orbitales
 var sizeScale = 0.0005;  // Escala para los tamaños de los planetas
+var asteroidScale = .2
+
 
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
 // L (mean longitude), long.peri. (longitude of perihelion), long.node. (longitude of ascending node)
@@ -91,12 +95,49 @@ Trajectory.prototype.propagate = function (trueAnomaly) {
   return [x * 100, y * 100, z * 100]; // Multiplicar por 100 para hacer más visibles las órbitas
 };
 
+
+function calculatePeriod(meanMotion) {
+    return 360 / meanMotion; // T = 360 / mean_motion
+}
+
+// Añadir asteroides a la escena
+function addAsteroids() {
+    asteroids.data.forEach(asteroid => {
+      const name = asteroid[0];
+      const eccentricity = parseFloat(asteroid[1]);
+      const semiMajorAxis = parseFloat(asteroid[2]);
+      const inclination = toRadians(parseFloat(asteroid[3]));
+      const longNode = toRadians(parseFloat(asteroid[4]));
+      const longPeri = toRadians(parseFloat(asteroid[5]));
+      const meanMotion = parseFloat(asteroid[7]);
+      const diameter = asteroid[8] ? parseFloat(asteroid[8]) : 2; // Si el diámetro es nulo, usar 2 km
+  
+      // Crear geometría y mesh del asteroide
+      var asteroidGeometry = new THREE.SphereGeometry(diameter * asteroidScale, 32, 32); // Escalado del diámetro
+      var asteroidMesh = new THREE.Mesh(asteroidGeometry, asteroidMaterial);
+      
+      // Calcular posición inicial del asteroide
+      var period = calculatePeriod(meanMotion);
+      var trueAnomaly = 0;
+      var r = (semiMajorAxis * (1 - eccentricity ** 2)) / (1 + eccentricity * Math.cos(trueAnomaly));
+      var x = r * (Math.cos(longPeri + trueAnomaly) * Math.cos(longNode) -
+                   Math.sin(longPeri + trueAnomaly) * Math.cos(inclination) * Math.sin(longNode));
+      var y = r * (Math.cos(longPeri + trueAnomaly) * Math.sin(longNode) +
+                   Math.sin(longPeri + trueAnomaly) * Math.cos(inclination) * Math.cos(longNode));
+      var z = r * (Math.sin(longPeri + trueAnomaly) * Math.sin(inclination));
+  
+      asteroidMesh.position.set(x * 100, y * 100, z * 100);
+      asteroidMesh.name = name;
+      scene.add(asteroidMesh);
+    });
+  }
+
+
 // Crear objetos de trayectorias
 var heavenlyBodies = [];
 orbitalElements.forEach(planet => {
   heavenlyBodies.push(new Trajectory(planet));
 });
-
 // Añadir órbitas a la escena
 function traceOrbits() {
   var geometry, material = new THREE.LineBasicMaterial({ color: 0xCCCCFF });
@@ -155,6 +196,7 @@ function animate() {
 
 // Llamadas a las funciones
 createSun();  // Añadir el sol
+addAsteroids();
 traceOrbits(); // Añadir las órbitas primero
 addPlanets();  // Después añadir los planetas
 animate();
