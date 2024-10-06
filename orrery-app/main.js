@@ -1,334 +1,445 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
-// Set up the scene, camera, and renderer
+
+// Crear la escena
 const scene = new THREE.Scene();
+
+var heavenlyBodies = [] ;
+
+// Crear la cámara
 const camera = new THREE.PerspectiveCamera(
-    75, window.innerWidth / window.innerHeight, 0.1, 1000
+    75, // Campo de visión
+    window.innerWidth / window.innerHeight, // Relación de aspecto
+    0.1, // Plano cercano
+    1000 // Plano lejano
 );
+
+// Crear el renderer
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Add a point light to simulate the Sun
-const light = new THREE.PointLight(0xffffff, 2, 1000);
-light.position.set(0, 0, 0); // Sun at the origin
-scene.add(light);
+// Añadir una luz ambiental para iluminar suavemente toda la escena
+const ambientLight = new THREE.AmbientLight(0xaaaaaaaaa); // Luz suave aumentada
+scene.add(ambientLight);
 
-// Add the Sun
-const sunGeometry = new THREE.SphereGeometry(.2, 32, 32);
-const sunMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+// Añadir una luz puntual para simular el Sol
+const sunLight = new THREE.PointLight(0xffffff, 5, 0); // Intensidad aumentada
+sunLight.position.set(0, 0, 0); // El Sol está en el origen
+scene.add(sunLight);
+
+// Crear el Sol con textura
+const textureLoader = new THREE.TextureLoader();
+const sunTexture = textureLoader.load('/textures/sun.jpg'); // Asegúrate de que la ruta sea correcta
+
+const sunGeometry = new THREE.SphereGeometry(2, 64, 64);
+const sunMaterial = new THREE.MeshBasicMaterial({ 
+    map: sunTexture
+});
 const sun = new THREE.Mesh(sunGeometry, sunMaterial);
 scene.add(sun);
 
-// Set up OrbitControls to allow camera movement with the mouse
+// Configurar OrbitControls para permitir el movimiento de la cámara con el ratón
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; // Smooth camera movement
+controls.enableDamping = true; // Movimiento suave de la cámara
 controls.dampingFactor = 0.05;
-controls.enableZoom = true; // Allow zooming in/out with the scroll wheel
+controls.enableZoom = true; // Permitir zoom con la rueda del ratón
 
-// Planet data (All planets)
+// Definir un factor de escala para los planetas
+const scaleFactor = 5; // Ajusta este valor para cambiar el tamaño de los planetas
+
+// Datos de los planetas del sistema solar con información adicional
 const planets = [
     {
         name: 'Mercury',
-        semiMajorAxis: 0.39, // AU
+        semiMajorAxis: 5, // Escala ajustada para visualización
         eccentricity: 0.2056,
-        inclination: 7.00, // Degrees
-        longitudeOfAscendingNode: 48.3313, // Degrees
-        argumentOfPeriapsis: 29.1241, // Degrees
-        meanLongitude: 252.25084, // Degrees
-        orbitalPeriod: 88.0, // Days
-        rotationPeriod: 58.6, // Days
-        radius: 0.2, // Arbitrary units
-        color: 0xaaaaaa // Gray color for Mercury
+        inclination: 7.00, // Grados
+        longitudeOfAscendingNode: 48.3313, // Grados
+        argumentOfPeriapsis: 29.1241, // Grados
+        meanLongitude: 252.25084, // Grados
+        orbitalPeriod: 88, // Días
+        rotationPeriod: 58.6, // Días (Rotación retrógrada)
+        radius: 0.2 * scaleFactor, // Tamaño visual escalado
+        color: 0xaaaaaa, // Color gris
+        texture: '/textures/mercury.jpg', // Ruta absoluta correcta
+        info: {
+            Mass: '3.30 × 10^23 kg',
+            Diameter: '4,879 km',
+            DistanceFromSun: '57.9 million km',
+            Moons: '0'
+        }
     },
     {
         name: 'Venus',
-        semiMajorAxis: 0.72,
+        semiMajorAxis: 7,
         eccentricity: 0.0068,
         inclination: 3.39,
         longitudeOfAscendingNode: 76.6807,
         argumentOfPeriapsis: 54.8523,
         meanLongitude: 181.97973,
         orbitalPeriod: 224.7,
-        rotationPeriod: -243.0, // Retrograde rotation
-        radius: 0.45,
-        color: 0xffddaa // Light orange for Venus
+        rotationPeriod: -243,
+        radius: 0.45 * scaleFactor,
+        color: 0xffddaa,
+        texture: '/textures/venus.jpg',
+        info: {
+            Mass: '4.87 × 10^24 kg',
+            Diameter: '12,104 km',
+            DistanceFromSun: '108.2 million km',
+            Moons: '0'
+        }
     },
     {
         name: 'Earth',
-        semiMajorAxis: 1.00,
+        semiMajorAxis: 10,
         eccentricity: 0.0167,
-        inclination: 0.00,
+        inclination: 0.0,
         longitudeOfAscendingNode: 0.0,
-        argumentOfPeriapsis: 0.0,
+        argumentOfPeriapsis: 102.94719,
         meanLongitude: 100.46435,
         orbitalPeriod: 365.25,
-        rotationPeriod: 1.0,
-        radius: 0.5,
-        color: 0x0000ff // Blue color for Earth
+        rotationPeriod: 1,
+        radius: 0.5 * scaleFactor,
+        color: 0x0000ff,
+        texture: '/textures/earth.jpg',
+        info: {
+            Mass: '5.97 × 10^24 kg',
+            Diameter: '12,742 km',
+            DistanceFromSun: '149.6 million km',
+            Moons: '1'
+        }
     },
     {
         name: 'Mars',
-        semiMajorAxis: 1.52,
+        semiMajorAxis: 15,
         eccentricity: 0.0934,
         inclination: 1.85,
-        longitudeOfAscendingNode: 49.5785,
+        longitudeOfAscendingNode: 49.57854,
         argumentOfPeriapsis: 286.502,
         meanLongitude: 355.45332,
-        orbitalPeriod: 687.0,
+        orbitalPeriod: 687,
         rotationPeriod: 1.03,
-        radius: 0.4,
-        color: 0xff4500 // Red color for Mars
+        radius: 0.4 * scaleFactor,
+        color: 0xff4500,
+        texture: '/textures/mars.jpg',
+        info: {
+            Mass: '6.42 × 10^23 kg',
+            Diameter: '6,779 km',
+            DistanceFromSun: '227.9 million km',
+            Moons: '2'
+        }
     },
     {
         name: 'Jupiter',
-        semiMajorAxis: 5.20,
-        eccentricity: 0.0484,
-        inclination: 1.31,
+        semiMajorAxis: 52,
+        eccentricity: 0.0489,
+        inclination: 1.303,
         longitudeOfAscendingNode: 100.55615,
         argumentOfPeriapsis: 273.867,
         meanLongitude: 34.40438,
-        orbitalPeriod: 4331.0,
+        orbitalPeriod: 4331,
         rotationPeriod: 0.41,
-        radius: 1.0,
-        color: 0xffa500 // Orange color for Jupiter
+        radius: 1 * scaleFactor,
+        color: 0xffa500,
+        texture: '/textures/jupiter.jpg',
+        info: {
+            Mass: '1.90 × 10^27 kg',
+            Diameter: '139,820 km',
+            DistanceFromSun: '778.5 million km',
+            Moons: '79'
+        }
     },
     {
         name: 'Saturn',
-        semiMajorAxis: 9.58,
+        semiMajorAxis: 95,
         eccentricity: 0.0565,
-        inclination: 2.49,
+        inclination: 2.485,
         longitudeOfAscendingNode: 113.71504,
         argumentOfPeriapsis: 339.392,
         meanLongitude: 49.94432,
-        orbitalPeriod: 10747.0,
+        orbitalPeriod: 10747,
         rotationPeriod: 0.44,
-        radius: 0.85,
-        color: 0xffc0cb // Pink color for Saturn
+        radius: 0.85 * scaleFactor,
+        color: 0xf5deb3,
+        texture: '/textures/saturn.jpg',
+        info: {
+            Mass: '5.68 × 10^26 kg',
+            Diameter: '116,460 km',
+            DistanceFromSun: '1.434 billion km',
+            Moons: '82'
+        }
     },
     {
         name: 'Uranus',
-        semiMajorAxis: 19.20,
+        semiMajorAxis: 191,
         eccentricity: 0.0463,
-        inclination: 0.77,
+        inclination: 0.773,
         longitudeOfAscendingNode: 74.22988,
-        argumentOfPeriapsis: 96.6612,
+        argumentOfPeriapsis: 96.73436,
         meanLongitude: 313.23218,
-        orbitalPeriod: 30589.0,
-        rotationPeriod: -0.72, // Retrograde rotation
-        radius: 0.7,
-        color: 0xadd8e6 // Light blue for Uranus
+        orbitalPeriod: 30589,
+        rotationPeriod: -0.72,
+        radius: 0.7 * scaleFactor,
+        color: 0xadd8e6,
+        texture: '/textures/uranus.jpg',
+        info: {
+            Mass: '8.68 × 10^25 kg',
+            Diameter: '50,724 km',
+            DistanceFromSun: '2.871 billion km',
+            Moons: '27'
+        }
     },
     {
         name: 'Neptune',
-        semiMajorAxis: 30.05,
-        eccentricity: 0.0092,
-        inclination: 1.77,
+        semiMajorAxis: 300,
+        eccentricity: 0.0095,
+        inclination: 1.770,
         longitudeOfAscendingNode: 131.72169,
-        argumentOfPeriapsis: 272.846,
-        meanLongitude: 304.88003,
-        orbitalPeriod: 59800.0,
+        argumentOfPeriapsis: 276.045,
+        meanLongitude: -55.120029,
+        orbitalPeriod: 59800,
         rotationPeriod: 0.67,
-        radius: 0.65,
-        color: 0x0000ff // Blue color for Neptune
+        radius: 0.65 * scaleFactor,
+        color: 0x0000ff,
+        texture: '/textures/neptune.jpg',
+        info: {
+            Mass: '1.02 × 10^26 kg',
+            Diameter: '49,244 km',
+            DistanceFromSun: '4.495 billion km',
+            Moons: '14'
+        }
     }
 ];
-
-// Function to convert degrees to radians
-function toRadians(degrees) {
-    return degrees * (Math.PI / 180);
-}
-
-// Keplerian system: Calculate true anomaly and position in 3D space
-function calculatePosition(planet, time) {
-    const meanAnomaly = toRadians(
-        (planet.meanLongitude + (360 / planet.orbitalPeriod) * time) % 360
-    );
-
-    // Simplified true anomaly (for more accuracy, implement Kepler's Equation)
-    const trueAnomaly = meanAnomaly;
-
-    // Distance from the focus (Sun) to the planet in orbit
-    const r = planet.semiMajorAxis * (1 - planet.eccentricity * Math.cos(trueAnomaly));
-
-    // Calculate the planet's position in the orbital plane
-    const xOrbitalPlane = r * Math.cos(trueAnomaly);
-    const yOrbitalPlane = r * Math.sin(trueAnomaly);
-
-    // Apply argument of periapsis rotation (ω)
-    const cosArgPeriapsis = Math.cos(toRadians(planet.argumentOfPeriapsis));
-    const sinArgPeriapsis = Math.sin(toRadians(planet.argumentOfPeriapsis));
-
-    const xRotated = xOrbitalPlane * cosArgPeriapsis - yOrbitalPlane * sinArgPeriapsis;
-    const yRotated = xOrbitalPlane * sinArgPeriapsis + yOrbitalPlane * cosArgPeriapsis;
-
-    // Apply inclination (i) tilt
-    const cosInclination = Math.cos(toRadians(planet.inclination));
-    const sinInclination = Math.sin(toRadians(planet.inclination));
-
-    const zInclined = yRotated * sinInclination;
-    const yInclined = yRotated * cosInclination;
-
-    // Apply longitude of ascending node (Ω) rotation around the z-axis
-    const cosLongAscNode = Math.cos(toRadians(planet.longitudeOfAscendingNode));
-    const sinLongAscNode = Math.sin(toRadians(planet.longitudeOfAscendingNode));
-
-    const xFinal = xRotated * cosLongAscNode - yInclined * sinLongAscNode;
-    const yFinal = xRotated * sinLongAscNode + yInclined * cosLongAscNode;
-
-    // Return the position in 3D space
-    return { x: xFinal, y: yFinal, z: zInclined };
-}
-
-// Function to create an orbit ring
-function createOrbit(planet) {
-    const curve = new THREE.EllipseCurve(
-        0, 0, // ax, aY: x and y of the center of ellipse
-        planet.semiMajorAxis, planet.semiMajorAxis * Math.sqrt(1 - planet.eccentricity ** 2), // xRadius, yRadius
-        0, 2 * Math.PI, // StartAngle, EndAngle
-        false, // Clockwise
-        0 // Rotation angle
-    );
-
-    const points = curve.getPoints(100); // Higher number for smoother orbit
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-    const material = new THREE.LineBasicMaterial({ color: 0xaaaaaa });
-    const ellipse = new THREE.Line(geometry, material);
-
-    // Rotate orbit to account for inclination and longitude of ascending node
-    ellipse.rotation.x = toRadians(planet.inclination); // Inclination tilt
-    ellipse.rotation.z = toRadians(planet.longitudeOfAscendingNode); // Rotation in 3D space
-
-    return ellipse;
-}
-
 // Añadir planetas y sus órbitas a la escena
 planets.forEach(planet => {
-    // Crear mesh del planeta
-    const planetGeometry = new THREE.SphereGeometry(planet.radius, 32, 32);
-    const planetMaterial = new THREE.MeshStandardMaterial({ color: planet.color });
-    planet.mesh = new THREE.Mesh(planetGeometry, planetMaterial);
-    scene.add(planet.mesh);
+    // Crear mesh del planeta con MeshPhongMaterial para mejor interacción con luces
+    celestialBody = new Trajectory(field.name.value,
+      field.semiMajorAxis.value,
+      field.inclination.value,
+      field.meanLongitude.value,
+      field.eccentricity.value,
+      field.longitudeOfAscendingNode.value,
+      field.meanAnomoly.value,
+      field.rotationPeriod.value);
+    heavenlyBodies.push(celestialBody) ;
+    const planetGeometry = new THREE.SphereGeometry(planet.radius, 64, 64);
+    const planetMaterial = new THREE.MeshPhongMaterial({
+        map: textureLoader.load(planet.texture), // Cargar la textura del planeta
+        shininess: 100000, // Ajustar brillo
+        specular: new THREE.Color(0xffffff)
+    });
+    const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+    planet.mesh = planetMesh;
+    scene.add(planetMesh);
 
     // Crear órbita y añadir a la escena
-    const orbit = createOrbit(planet);
-    scene.add(orbit);
+    createOrbit(planet);
 });
 
-// Opcional: Añadir un cometa con cola de partículas
-class Comet {
-    constructor(params) {
-        this.semiMajorAxis = params.semiMajorAxis;
-        this.eccentricity = params.eccentricity;
-        this.inclination = params.inclination;
-        this.longitudeOfAscendingNode = params.longitudeOfAscendingNode;
-        this.argumentOfPeriapsis = params.argumentOfPeriapsis;
-        this.meanLongitude = params.meanLongitude;
-        this.orbitalPeriod = params.orbitalPeriod;
-        this.rotationPeriod = params.rotationPeriod;
-        this.radius = params.radius;
-        this.color = params.color;
+// Crear un sistema de partículas para el fondo de estrellas
+const starsCount = 10000;
+const starsGeometryParticles = new THREE.BufferGeometry();
+const starsPositions = new Float32Array(starsCount * 3);
 
-        // Crear mesh del cometa
-        const cometGeometry = new THREE.SphereGeometry(this.radius, 16, 16);
-        const cometMaterial = new THREE.MeshStandardMaterial({ color: this.color });
-        this.mesh = new THREE.Mesh(cometGeometry, cometMaterial);
-        scene.add(this.mesh);
+for (let i = 0; i < starsCount; i++) {
+    const x = THREE.MathUtils.randFloatSpread(1000); // Distribución aleatoria
+    const y = THREE.MathUtils.randFloatSpread(1000);
+    const z = THREE.MathUtils.randFloatSpread(1000);
+    starsPositions[i * 3] = x;
+    starsPositions[i * 3 + 1] = y;
+    starsPositions[i * 3 + 2] = z;
+}
 
-        // Crear sistema de partículas para la cola
-        const particleCount = 1000;
-        const particlesGeometry = new THREE.BufferGeometry();
-        const positions = new Float32Array(particleCount * 3); // x, y, z para cada partícula
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-        const particlesMaterial = new THREE.PointsMaterial({
-            color: 0xffffff,
-            size: 0.05,
-            transparent: true,
-            opacity: 0.7
-        });
-        this.particleSystem = new THREE.Points(particlesGeometry, particlesMaterial);
-        scene.add(this.particleSystem);
+starsGeometryParticles.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
 
-        // Almacenar las posiciones de las partículas
-        this.particlesPositions = positions;
-        this.particleIndex = 0;
-    }
+const starsMaterialParticles = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.5,
+    transparent: true
+});
 
-    update(time) {
-        const position = calculatePosition(this, time);
-        this.mesh.position.set(position.x, position.z, position.y); // Mapeo a x, y, z coordenadas
+const starParticles = new THREE.Points(starsGeometryParticles, starsMaterialParticles);
+scene.add(starParticles);
 
-        // Actualizar sistema de partículas para la cola
-        // Generar nuevas partículas detrás del cometa
-        const tailLength = 5; // Longitud de la cola
-        const tailPosition = new THREE.Vector3(position.x, position.z, position.y)
-            .sub(new THREE.Vector3(
-                tailLength * Math.cos(toRadians(this.meanLongitude)),
-                tailLength * Math.sin(toRadians(this.meanLongitude)),
-                0
-            ));
+// Configurar la posición inicial de la cámara
+camera.position.set(0, 100, 300); // Posición más alejada para visualizar todas las órbitas
+controls.update();
 
-        // Añadir nueva partícula
-        this.particlesPositions[this.particleIndex * 3] = tailPosition.x;
-        this.particlesPositions[this.particleIndex * 3 + 1] = tailPosition.y;
-        this.particlesPositions[this.particleIndex * 3 + 2] = tailPosition.z;
-        this.particleIndex = (this.particleIndex + 1) % (this.particlesPositions.length / 3);
-        this.particleSystem.geometry.attributes.position.needsUpdate = true;
-    }
+// Almacenar la posición y el objetivo inicial de la cámara
+const originalCameraPosition = camera.position.clone();
+const originalControlsTarget = controls.target.clone();
 
-    rotateSelf() {
-        this.mesh.rotateOnAxis(new THREE.Vector3(0, 1, 0), 0.1 / this.rotationPeriod);
+// Raycaster para detectar la selección de planetas
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// Variables para el seguimiento del zoom
+let selectedPlanet = null; // Planeta actualmente seleccionado
+let isZooming = false;
+let zoomDuration = 1000; // Duración del zoom en milisegundos
+let zoomStartTime = 0;
+
+// Offset de la cámara respecto al planeta seleccionado (ajustado para un zoom más cercano)
+const cameraOffset = new THREE.Vector3(0, 2, 5); // Puedes ajustar estos valores según tus necesidades
+
+// Crear un botón para resetear la vista
+const resetButton = document.createElement('button');
+resetButton.innerText = 'Return to original view';
+resetButton.style.position = 'absolute';
+resetButton.style.top = '20px';
+resetButton.style.right = '20px'; // Cambiado de left a right para moverlo a la esquina superior derecha
+resetButton.style.padding = '10px 20px';
+resetButton.style.zIndex = '1';
+resetButton.style.backgroundColor = '#ffffff';
+resetButton.style.border = 'none';
+resetButton.style.borderRadius = '5px';
+resetButton.style.cursor = 'pointer';
+resetButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+resetButton.style.display = 'none'; // Inicialmente oculto
+document.body.appendChild(resetButton);
+
+// Crear un cuadro para mostrar información del planeta
+const infoBox = document.createElement('div');
+infoBox.id = 'planet-info';
+infoBox.style.position = 'absolute';
+infoBox.style.top = '20px';
+infoBox.style.left = '20px';
+infoBox.style.padding = '10px';
+infoBox.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+infoBox.style.color = '#ffffff';
+infoBox.style.fontFamily = 'Arial, sans-serif';
+infoBox.style.borderRadius = '5px';
+infoBox.style.maxWidth = '300px';
+infoBox.style.display = 'none'; // Inicialmente oculto
+document.body.appendChild(infoBox);
+
+// Añadir el listener para el botón de reset
+resetButton.addEventListener('click', () => {
+    if (isZooming) return; // Evitar interrumpir una animación de zoom en curso
+    resetView();
+});
+
+// Función para volver a la vista original (zoom out y dejar de seguir)
+function resetView() {
+    if (!selectedPlanet) return; // Si no hay planeta seleccionado, no hacer nada
+
+    isZooming = true;
+    zoomStartTime = performance.now();
+    selectedPlanet = null; // Dejar de seguir al planeta
+
+    resetButton.style.display = 'none'; // Ocultar el botón al hacer zoom out
+    infoBox.style.display = 'none'; // Ocultar el cuadro de información
+}
+
+// Función para manejar el clic del ratón
+function onMouseClick(event) {
+    if (isZooming) return; // Evitar múltiples zooms simultáneos
+
+    // Calcular la posición del ratón en coordenadas normalizadas (-1 a +1) para ambos ejes
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Actualizar el raycaster con la posición de la cámara y el ratón
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calcular las intersecciones con los planetas
+    const intersects = raycaster.intersectObjects(planets.map(planet => planet.mesh));
+
+    if (intersects.length > 0) {
+        const selectedMesh = intersects[0].object;
+        const planetData = planets.find(planet => planet.mesh === selectedMesh);
+
+        if (planetData) {
+            // Iniciar el proceso de zoom
+            isZooming = true;
+            selectedPlanet = planetData;
+            zoomStartTime = performance.now();
+
+            resetButton.style.display = 'block'; // Mostrar el botón cuando se selecciona un planeta
+
+            // Mostrar la información del planeta
+            showPlanetInfo(planetData);
+        }
     }
 }
 
-// Crear un cometa y añadirlo a la escena (Opcional)
-const cometParams = {
-    semiMajorAxis: 20,
-    eccentricity: 0.7,
-    inclination: 10, // Degrees
-    longitudeOfAscendingNode: 80, // Degrees
-    argumentOfPeriapsis: 45, // Degrees
-    meanLongitude: 0, // Degrees
-    orbitalPeriod: 150, // Days
-    rotationPeriod: 1, // Days
-    radius: 0.2,
-    color: 0xffffff
-};
-const comet = new Comet(cometParams);
+// Añadir el listener para el clic
+window.addEventListener('click', onMouseClick);
 
-// Set camera position
-camera.position.set(0, 30, 50);
+// Función para mostrar la información del planeta
+function showPlanetInfo(planet) {
+    infoBox.innerHTML = `
+        <h2>${planet.name}</h2>
+        <p><strong>Mass:</strong> ${planet.info.Mass}</p>
+        <p><strong>Diameter:</strong> ${planet.info.Diameter}</p>
+        <p><strong>Distance from Sun:</strong> ${planet.info.DistanceFromSun}</p>
+        <p><strong>Moons:</strong> ${planet.info.Moons}</p>
+    `;
+    infoBox.style.display = 'block';
+}
 
-// Animation loop to update the position of planets y cometa
+// Función para calcular la posición deseada de la cámara respecto al planeta
+function getDesiredCameraPosition(planetPosition) {
+    // Clone el vector de posición del planeta
+    const desiredPosition = planetPosition.clone().add(cameraOffset);
+    return desiredPosition;
+}
+
+// Función de animación
 let time = 0;
-function animate() {
-    requestAnimationFrame(animate);
+const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbital
 
-    // Actualizar posiciones y rotaciones de los planetas
-    planets.forEach(planet => {
-        const position = calculatePosition(planet, time);
-        planet.mesh.position.set(position.x, position.z, position.y); // Mapeo a x, y, z coordenadas
 
-        // Rotación propia
-        const rotationAxis = new THREE.Vector3(0, 1, 0); // Eje Y para rotación
-        const rotationSpeed = 0.1 / Math.abs(planet.rotationPeriod); // Asegurar velocidad positiva
-        const rotationAngle = planet.rotationPeriod > 0 ? rotationSpeed : -rotationSpeed; // Dirección basada en signo
-        planet.mesh.rotateOnAxis(rotationAxis, rotationAngle);
-    });
 
-    // Actualizar posición y rotación del cometa (Opcional)
-    comet.update(time);
-    comet.rotateSelf();
+    // Manejar el zoom y seguimiento
+    const currentTime = performance.now();
 
-    time += 0.1; // Incrementar tiempo para movimiento orbital
+    if (isZooming) {
+        const elapsed = currentTime - zoomStartTime;
+        const t = Math.min(elapsed / zoomDuration, 1); // Normalizar el tiempo
 
-    // Actualizar controles y renderizar la escena
-    controls.update();
+        if (selectedPlanet) {
+            // Zoom hacia el planeta seleccionado
+            const planetPosition = selectedPlanet.mesh.position.clone();
+
+            // Posición objetivo de la cámara
+            const desiredPosition = getDesiredCameraPosition(planetPosition);
+
+            // Interpolar la posición de la cámara
+            camera.position.lerp(desiredPosition, t);
+
+            // Interpolar el objetivo de los controles para que siga al planeta
+            controls.target.lerp(planetPosition, t);
+        } else {
+            // Volver a la vista original (zoom out)
+            const desiredPosition = originalCameraPosition.clone();
+            camera.position.lerp(desiredPosition, t);
+
+            // Interpolar el objetivo de los controles hacia el objetivo original
+            controls.target.lerp(originalControlsTarget, t);
+        }
+
+        controls.update();
+
+        if (t === 1) {
+            isZooming = false;
+        }
+    } else if (selectedPlanet) {
+        // Si un planeta está seleccionado, seguir su posición
+        const planetPosition = selectedPlanet.mesh.position.clone();
+        const desiredPosition = planetPosition.clone().add(cameraOffset);
+
+        // Mantener la cámara en la posición deseada respecto al planeta
+        camera.position.lerp(desiredPosition, 0.1); // Ajusta el factor de interpolación para suavizar
+        controls.target.lerp(planetPosition, 0.1); // Mantener el objetivo en el planeta
+
+        controls.update();
+    }
+
     renderer.render(scene, camera);
-}
 
-animate();
+    animate();
 
 // Manejar el redimensionamiento de la ventana
 window.addEventListener('resize', () => {
