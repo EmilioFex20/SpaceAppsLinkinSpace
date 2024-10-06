@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { asteroids } from './api.js'; // Importar los datos de los asteroides
 
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000); // Aumentar el "far" para ver objetos lejanos
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000); // Prueba con un valor más grande para el "far"
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -14,7 +14,7 @@ camera.position.set(0, 200, 800); // Aumentar el zoom inicial para evitar hacer 
 controls.update();
 
 // Añadir luces
-var sunLight = new THREE.PointLight(0xffffff, 2, 5000); // Aumentar el alcance de la luz
+var sunLight = new THREE.PointLight(0xffffff, 3, 10000); // Aumentar la intensidad y alcance
 sunLight.position.set(0, 0, 0); // Colocar la luz en el centro (el sol)
 scene.add(sunLight);
 
@@ -28,15 +28,17 @@ const sunTexture = textureLoader.load('/textures/sun.jpg'); // Asegúrate de que
 
 // Crear el Sol
 function createSun() {
-    var sunGeometry = new THREE.SphereGeometry(10, 32, 32); // Tamaño del Sol
-    var sunMaterial = new THREE.MeshBasicMaterial({ 
-      map: sunTexture
-  }); // Color amarillo para el Sol
-    var sun = new THREE.Mesh(sunGeometry, sunMaterial);
-    sun.position.set(0, 0, 0);
-    scene.add(sun);
+  var sunDiameter = 1391000 * 0.00001; // Diámetro del Sol en km a escala
+  var sunGeometry = new THREE.SphereGeometry(sunDiameter / 2, 32, 32); // Radio = diámetro/2
+  var sunMaterial = new THREE.MeshBasicMaterial({ 
+    map: sunTexture
+  });
+  var sun = new THREE.Mesh(sunGeometry, sunMaterial);
+  sun.position.set(0, 0, 0);
+  scene.add(sun);
 }
-var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+
+var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xd6d6d6 });
 
 // Material para los planetas
 
@@ -54,9 +56,9 @@ var planetSizes = {
 };
 
 // Factores de escala
-var distanceScale = 100; // Escala para las distancias orbitales
-var sizeScale = 0.001;  // Escala para los tamaños de los planetas
-var asteroidScale = .1  
+var distanceScale = 100; // Reducir el factor de escala para las distancias orbitales
+var sizeScale = 0.0001;   // Aumentar el tamaño de los planetas para que sean más visibles
+var asteroidScale = .022  
 
 
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
@@ -100,7 +102,7 @@ Trajectory.prototype.propagate = function (trueAnomaly) {
   var y = r * (Math.cos(this.argumentOfPerigee + trueAnomaly) * Math.sin(this.longitudeOfAscendingNode) +
                Math.sin(this.argumentOfPerigee + trueAnomaly) * Math.cos(this.inclination) * Math.cos(this.longitudeOfAscendingNode));
   var z = r * (Math.sin(this.argumentOfPerigee + trueAnomaly) * Math.sin(this.inclination));
-  return [x * 100, y * 100, z * 100]; // Multiplicar por 100 para hacer más visibles las órbitas
+  return [x * distanceScale, y * distanceScale, z * distanceScale]; // Multiplicar por 100 para hacer más visibles las órbitas
 };
 
 
@@ -185,24 +187,28 @@ function traceOrbits() {
 // Añadir planetas a la escenafunction addPlanets() {
 // Añadir planetas a la escena
 function addPlanets() {
-  heavenlyBodies.forEach(body => {
-    // Obtener el tamaño del planeta y aplicarle la escala
-    var planetDiameter = planetSizes[body.name] * sizeScale;
-    const planetTexture = textureLoader.load(body.texture); 
-    // Geometría del planeta (usando el diámetro a escala)
-    var planetGeometry = new THREE.SphereGeometry(planetDiameter / 2, 32, 32); // Radio = diámetro/2
-
-    var planetMaterial = new THREE.MeshBasicMaterial({
-      map: planetTexture, // Cargar la textura del planeta
+    heavenlyBodies.forEach(body => {
+      // Obtener el tamaño del planeta y aplicarle la escala
+      var planetDiameter = planetSizes[body.name] * sizeScale;
+      const planetTexture = textureLoader.load(body.texture); 
+      // Geometría del planeta (usando el diámetro a escala)
+      var planetGeometry = new THREE.SphereGeometry(planetDiameter / 2, 32, 32); // Radio = diámetro/2
+  
+      var planetMaterial = new THREE.MeshBasicMaterial({
+        map: planetTexture, // Cargar la textura del planeta
+      });
+      var planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+  
+      // Corregir la orientación de la textura
+      planetMesh.rotation.x = Math.PI / 2; // Rotar 90 grados en el eje Y
+  
+      // Posición inicial del planeta
+      var initialPos = body.propagate(body.trueAnomaly);
+      planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
+      planetMesh.name = body.name;
+      scene.add(planetMesh);
     });
-    var planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
-
-    // Posición inicial del planeta
-    var initialPos = body.propagate(body.trueAnomaly);
-    planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
-    planetMesh.name = body.name;
-    scene.add(planetMesh);
-  });}
+  }  
 
 
 // Animación para actualizar las posiciones de los planetas
@@ -232,7 +238,7 @@ function animate() {
                          Math.sin(obj.longPeri + obj.trueAnomaly) * Math.cos(obj.inclination) * Math.cos(obj.longNode));
             var z = r * (Math.sin(obj.longPeri + obj.trueAnomaly) * Math.sin(obj.inclination));
 
-            obj.position.set(x * 100, y * 100, z * 100);
+            obj.position.set(x * distanceScale, y * distanceScale, z * distanceScale);
 
             // Incrementar la anomalía verdadera para animar la órbita del asteroide
             obj.trueAnomaly += (2 * Math.PI / obj.period) * 0.1; // Ajustar la velocidad según el periodo
