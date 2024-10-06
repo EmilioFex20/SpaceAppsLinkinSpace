@@ -28,7 +28,7 @@ scene.add(sunLight);
 
 // Crear el Sol con textura
 const textureLoader = new THREE.TextureLoader();
-const sunTexture = textureLoader.load('/textures/sun.jpg'); // Ruta absoluta correcta
+const sunTexture = textureLoader.load('/textures/sun.jpg'); // Asegúrate de que la ruta sea correcta
 
 const sunGeometry = new THREE.SphereGeometry(2, 64, 64);
 const sunMaterial = new THREE.MeshBasicMaterial({ 
@@ -46,7 +46,7 @@ controls.enableZoom = true; // Permitir zoom con la rueda del ratón
 // Datos de los planetas del sistema solar
 const planets = [
     {
-        name: 'Mercurio',
+        name: 'Mercury',
         semiMajorAxis: 5, // Escala ajustada para visualización
         eccentricity: 0.2056,
         inclination: 7.00, // Grados
@@ -74,7 +74,7 @@ const planets = [
         texture: '/textures/venus.jpg'
     },
     {
-        name: 'Tierra',
+        name: 'Earth',
         semiMajorAxis: 10,
         eccentricity: 0.0167,
         inclination: 0.0,
@@ -88,7 +88,7 @@ const planets = [
         texture: '/textures/earth.jpg'
     },
     {
-        name: 'Marte',
+        name: 'Mars',
         semiMajorAxis: 15,
         eccentricity: 0.0934,
         inclination: 1.85,
@@ -102,7 +102,7 @@ const planets = [
         texture: '/textures/mars.jpg'
     },
     {
-        name: 'Júpiter',
+        name: 'Jupiter',
         semiMajorAxis: 52,
         eccentricity: 0.0489,
         inclination: 1.303,
@@ -116,7 +116,7 @@ const planets = [
         texture: '/textures/jupiter.jpg'
     },
     {
-        name: 'Saturno',
+        name: 'Saturn',
         semiMajorAxis: 95,
         eccentricity: 0.0565,
         inclination: 2.485,
@@ -130,7 +130,7 @@ const planets = [
         texture: '/textures/saturn.jpg'
     },
     {
-        name: 'Urano',
+        name: 'Uranus',
         semiMajorAxis: 191,
         eccentricity: 0.0463,
         inclination: 0.773,
@@ -144,7 +144,7 @@ const planets = [
         texture: '/textures/uranus.jpg'
     },
     {
-        name: 'Neptuno',
+        name: 'Neptune',
         semiMajorAxis: 300,
         eccentricity: 0.0095,
         inclination: 1.770,
@@ -205,50 +205,7 @@ function calculatePosition(planet, time) {
 
     return { x: xFinal, y: yFinal, z: zInclined };
 }
-// Añadir planetas a la escena
-planets.forEach(planet => {
-    const planetGeometry = new THREE.SphereGeometry(planet.radius, 64, 64);
-    const planetMaterial = new THREE.MeshPhongMaterial({
-        map: textureLoader.load(planet.texture),
-        shininess: 100000,
-        specular: new THREE.Color(0xffffff)
-    });
-    const planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
-    planet.mesh = planetMesh;
-    scene.add(planetMesh);
-});
 
-// Posición inicial de la cámara
-camera.position.set(0, 100, 300);
-controls.update();
-
-// Raycaster para detectar la selección de planetas
-const raycaster = new THREE.Raycaster();
-const mouse = new THREE.Vector2();
-
-// Manejar clic en la pantalla
-function onMouseClick(event) {
-    // Convertir las coordenadas del clic a coordenadas normalizadas
-    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-    // Lanzar un rayo desde la cámara
-    raycaster.setFromCamera(mouse, camera);
-
-    // Detectar intersección con planetas
-    const intersects = raycaster.intersectObjects(planets.map(planet => planet.mesh));
-    if (intersects.length > 0) {
-        const selectedPlanet = intersects[0].object;
-        
-        // Acercar la cámara al planeta seleccionado
-        const targetPosition = selectedPlanet.position.clone().multiplyScalar(1.5); // Ajusta la distancia
-        controls.target.copy(selectedPlanet.position);
-        camera.position.copy(targetPosition);
-    }
-}
-
-// Evento de clic
-window.addEventListener('click', onMouseClick);
 // Función para crear una órbita elíptica correctamente orientada
 function createOrbit(planet) {
     // Crear una curva elíptica
@@ -306,34 +263,6 @@ planets.forEach(planet => {
     createOrbit(planet);
 });
 
-// Configurar la posición inicial de la cámara
-camera.position.set(0, 100, 300); // Posición más alejada para visualizar todas las órbitas
-controls.update();
-
-// Bucle de animación para actualizar la posición de los planetas
-let time = 0;
-const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbital
-
-function animate() {
-    requestAnimationFrame(animate);
-
-    // Actualizar posiciones y rotaciones de los planetas
-    planets.forEach(planet => {
-        const position = calculatePosition(planet, time);
-        planet.mesh.position.set(position.x, position.y, position.z); // Mapeo correcto a X, Y, Z
-
-        // Rotación propia alrededor del eje Y
-        const rotationSpeed = (0.01 / Math.abs(planet.rotationPeriod)); // Ajustar la velocidad
-        const rotationAxis = new THREE.Vector3(0, 1, 0); // Eje Y
-        planet.mesh.rotateOnAxis(rotationAxis, rotationSpeed);
-    });
-
-    time += timeIncrement; // Incrementar tiempo (ajustar para velocidad orbital)
-
-    // Actualizar controles y renderizar la escena
-    controls.update();
-    renderer.render(scene, camera);
-}
 // Crear un sistema de partículas para el fondo de estrellas
 const starsCount = 10000;
 const starsGeometryParticles = new THREE.BufferGeometry();
@@ -359,7 +288,163 @@ const starsMaterialParticles = new THREE.PointsMaterial({
 const starParticles = new THREE.Points(starsGeometryParticles, starsMaterialParticles);
 scene.add(starParticles);
 
-animate();
+// Configurar la posición inicial de la cámara
+camera.position.set(0, 100, 300); // Posición más alejada para visualizar todas las órbitas
+controls.update();
+
+// Almacenar la posición y el objetivo inicial de la cámara
+const originalCameraPosition = camera.position.clone();
+const originalControlsTarget = controls.target.clone();
+
+// Raycaster para detectar la selección de planetas
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+
+// Variables para el seguimiento del zoom
+let selectedPlanet = null; // Planeta actualmente seleccionado
+let isZooming = false;
+let zoomDuration = 1000; // Duración del zoom en milisegundos
+let zoomStartTime = 0;
+
+// Offset de la cámara respecto al planeta seleccionado (ajustado para un zoom más cercano)
+const cameraOffset = new THREE.Vector3(0, 2, 5); // Puedes ajustar estos valores según tus necesidades
+
+// Añadir el listener para el clic
+window.addEventListener('click', onMouseClick);
+
+// Función para calcular la posición deseada de la cámara respecto al planeta
+function getDesiredCameraPosition(planetPosition) {
+    // Clone el vector de posición del planeta
+    const desiredPosition = planetPosition.clone().add(cameraOffset);
+    return desiredPosition;
+}
+
+// Crear un botón para resetear la vista
+const resetButton = document.createElement('button');
+resetButton.innerText = 'Return to original view';
+resetButton.style.position = 'absolute';
+resetButton.style.top = '20px';
+resetButton.style.left = '20px';
+resetButton.style.padding = '10px 20px';
+resetButton.style.zIndex = '1';
+resetButton.style.backgroundColor = '#ffffff';
+resetButton.style.border = 'none';
+resetButton.style.borderRadius = '5px';
+resetButton.style.cursor = 'pointer';
+resetButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
+resetButton.style.display = 'none';
+document.body.appendChild(resetButton);
+
+// Añadir el listener para el botón de reset
+resetButton.addEventListener('click', () => {
+    if (isZooming) return; // Evitar interrumpir una animación de zoom en curso
+    resetView();
+});
+function resetView() {
+    if (!selectedPlanet) return; // Si no hay planeta seleccionado, no hacer nada
+
+    isZooming = true;
+    zoomStartTime = performance.now();
+    selectedPlanet = null; // Dejar de seguir al planeta
+
+    resetButton.style.display = 'none'; // Ocultar el botón al hacer zoom out
+}
+// Función para manejar el clic del ratón
+function onMouseClick(event) {
+    if (isZooming) return; // Evitar múltiples zooms simultáneos
+
+    // Calcular la posición del ratón en coordenadas normalizadas (-1 a +1) para ambos ejes
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+    // Actualizar el raycaster con la posición de la cámara y el ratón
+    raycaster.setFromCamera(mouse, camera);
+
+    // Calcular las intersecciones con los planetas
+    const intersects = raycaster.intersectObjects(planets.map(planet => planet.mesh));
+
+    if (intersects.length > 0) {
+        const selectedMesh = intersects[0].object;
+        const planetData = planets.find(planet => planet.mesh === selectedMesh);
+
+        if (planetData) {
+            // Iniciar el proceso de zoom
+            isZooming = true;
+            selectedPlanet = planetData;
+            zoomStartTime = performance.now();
+
+            resetButton.style.display = 'block'; // Mostrar el botón cuando se selecciona un planeta
+        }
+    }
+}
+// Función de animación
+let time = 0;
+const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbital
+
+function animate() {
+    requestAnimationFrame(animate);
+
+    // Actualizar posiciones y rotaciones de los planetas
+    planets.forEach(planet => {
+        const position = calculatePosition(planet, time);
+        planet.mesh.position.set(position.x, position.y, position.z); // Mapeo correcto a X, Y, Z
+
+        // Rotación propia alrededor del eje Y
+        const rotationSpeed = (0.01 / Math.abs(planet.rotationPeriod)); // Ajustar la velocidad
+        const rotationAxis = new THREE.Vector3(0, 1, 0); // Eje Y
+        planet.mesh.rotateOnAxis(rotationAxis, rotationSpeed);
+    });
+
+    time += timeIncrement; // Incrementar tiempo (ajustar para velocidad orbital)
+
+    // Manejar el zoom y seguimiento
+    const currentTime = performance.now();
+
+    if (isZooming) {
+        const elapsed = currentTime - zoomStartTime;
+        const t = Math.min(elapsed / zoomDuration, 1); // Normalizar el tiempo
+
+        if (selectedPlanet) {
+            // Zoom hacia el planeta seleccionado
+            const planetPosition = selectedPlanet.mesh.position.clone();
+
+            // Posición objetivo de la cámara
+            const desiredPosition = getDesiredCameraPosition(planetPosition);
+
+            // Interpolar la posición de la cámara
+            camera.position.lerp(desiredPosition, t);
+
+            // Interpolar el objetivo de los controles para que siga al planeta
+            controls.target.lerp(planetPosition, t);
+        } else {
+            // Volver a la vista original (zoom out)
+            const desiredPosition = originalCameraPosition.clone();
+            camera.position.lerp(desiredPosition, t);
+
+            // Interpolar el objetivo de los controles hacia el objetivo original
+            controls.target.lerp(originalControlsTarget, t);
+        }
+
+        controls.update();
+
+        if (t === 1) {
+            isZooming = false;
+        }
+    } else if (selectedPlanet) {
+        // Si un planeta está seleccionado, seguir su posición
+        const planetPosition = selectedPlanet.mesh.position.clone();
+        const desiredPosition = planetPosition.clone().add(cameraOffset);
+
+        // Mantener la cámara en la posición deseada respecto al planeta
+        camera.position.lerp(desiredPosition, 0.1); // Ajusta el factor de interpolación para suavizar
+        controls.target.lerp(planetPosition, 0.1); // Mantener el objetivo en el planeta
+
+        controls.update();
+    }
+
+    renderer.render(scene, camera);
+}
+
 animate();
 
 // Manejar el redimensionamiento de la ventana
