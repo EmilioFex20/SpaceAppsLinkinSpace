@@ -43,7 +43,10 @@ controls.enableDamping = true; // Movimiento suave de la cámara
 controls.dampingFactor = 0.05;
 controls.enableZoom = true; // Permitir zoom con la rueda del ratón
 
-// Datos de los planetas del sistema solar
+// Definir un factor de escala para los planetas
+const scaleFactor = 5; // Ajusta este valor para cambiar el tamaño de los planetas
+
+// Datos de los planetas del sistema solar con información adicional
 const planets = [
     {
         name: 'Mercury',
@@ -55,9 +58,15 @@ const planets = [
         meanLongitude: 252.25084, // Grados
         orbitalPeriod: 88, // Días
         rotationPeriod: 58.6, // Días (Rotación retrógrada)
-        radius: 0.2, // Tamaño visual
+        radius: 0.2 * scaleFactor, // Tamaño visual escalado
         color: 0xaaaaaa, // Color gris
-        texture: '/textures/mercury.jpg' // Ruta absoluta correcta
+        texture: '/textures/mercury.jpg', // Ruta absoluta correcta
+        info: {
+            Mass: '3.30 × 10^23 kg',
+            Diameter: '4,879 km',
+            DistanceFromSun: '57.9 million km',
+            Moons: '0'
+        }
     },
     {
         name: 'Venus',
@@ -69,9 +78,15 @@ const planets = [
         meanLongitude: 181.97973,
         orbitalPeriod: 224.7,
         rotationPeriod: -243,
-        radius: 0.45,
+        radius: 0.45 * scaleFactor,
         color: 0xffddaa,
-        texture: '/textures/venus.jpg'
+        texture: '/textures/venus.jpg',
+        info: {
+            Mass: '4.87 × 10^24 kg',
+            Diameter: '12,104 km',
+            DistanceFromSun: '108.2 million km',
+            Moons: '0'
+        }
     },
     {
         name: 'Earth',
@@ -83,9 +98,15 @@ const planets = [
         meanLongitude: 100.46435,
         orbitalPeriod: 365.25,
         rotationPeriod: 1,
-        radius: 0.5,
+        radius: 0.5 * scaleFactor,
         color: 0x0000ff,
-        texture: '/textures/earth.jpg'
+        texture: '/textures/earth.jpg',
+        info: {
+            Mass: '5.97 × 10^24 kg',
+            Diameter: '12,742 km',
+            DistanceFromSun: '149.6 million km',
+            Moons: '1'
+        }
     },
     {
         name: 'Mars',
@@ -97,9 +118,15 @@ const planets = [
         meanLongitude: 355.45332,
         orbitalPeriod: 687,
         rotationPeriod: 1.03,
-        radius: 0.4,
+        radius: 0.4 * scaleFactor,
         color: 0xff4500,
-        texture: '/textures/mars.jpg'
+        texture: '/textures/mars.jpg',
+        info: {
+            Mass: '6.42 × 10^23 kg',
+            Diameter: '6,779 km',
+            DistanceFromSun: '227.9 million km',
+            Moons: '2'
+        }
     },
     {
         name: 'Jupiter',
@@ -111,9 +138,15 @@ const planets = [
         meanLongitude: 34.40438,
         orbitalPeriod: 4331,
         rotationPeriod: 0.41,
-        radius: 1,
+        radius: 1 * scaleFactor,
         color: 0xffa500,
-        texture: '/textures/jupiter.jpg'
+        texture: '/textures/jupiter.jpg',
+        info: {
+            Mass: '1.90 × 10^27 kg',
+            Diameter: '139,820 km',
+            DistanceFromSun: '778.5 million km',
+            Moons: '79'
+        }
     },
     {
         name: 'Saturn',
@@ -125,9 +158,15 @@ const planets = [
         meanLongitude: 49.94432,
         orbitalPeriod: 10747,
         rotationPeriod: 0.44,
-        radius: 0.85,
+        radius: 0.85 * scaleFactor,
         color: 0xf5deb3,
-        texture: '/textures/saturn.jpg'
+        texture: '/textures/saturn.jpg',
+        info: {
+            Mass: '5.68 × 10^26 kg',
+            Diameter: '116,460 km',
+            DistanceFromSun: '1.434 billion km',
+            Moons: '82'
+        }
     },
     {
         name: 'Uranus',
@@ -139,9 +178,15 @@ const planets = [
         meanLongitude: 313.23218,
         orbitalPeriod: 30589,
         rotationPeriod: -0.72,
-        radius: 0.7,
+        radius: 0.7 * scaleFactor,
         color: 0xadd8e6,
-        texture: '/textures/uranus.jpg'
+        texture: '/textures/uranus.jpg',
+        info: {
+            Mass: '8.68 × 10^25 kg',
+            Diameter: '50,724 km',
+            DistanceFromSun: '2.871 billion km',
+            Moons: '27'
+        }
     },
     {
         name: 'Neptune',
@@ -153,9 +198,15 @@ const planets = [
         meanLongitude: -55.120029,
         orbitalPeriod: 59800,
         rotationPeriod: 0.67,
-        radius: 0.65,
+        radius: 0.65 * scaleFactor,
         color: 0x0000ff,
-        texture: '/textures/neptune.jpg'
+        texture: '/textures/neptune.jpg',
+        info: {
+            Mass: '1.02 × 10^26 kg',
+            Diameter: '49,244 km',
+            DistanceFromSun: '4.495 billion km',
+            Moons: '14'
+        }
     }
 ];
 
@@ -309,22 +360,12 @@ let zoomStartTime = 0;
 // Offset de la cámara respecto al planeta seleccionado (ajustado para un zoom más cercano)
 const cameraOffset = new THREE.Vector3(0, 2, 5); // Puedes ajustar estos valores según tus necesidades
 
-// Añadir el listener para el clic
-window.addEventListener('click', onMouseClick);
-
-// Función para calcular la posición deseada de la cámara respecto al planeta
-function getDesiredCameraPosition(planetPosition) {
-    // Clone el vector de posición del planeta
-    const desiredPosition = planetPosition.clone().add(cameraOffset);
-    return desiredPosition;
-}
-
 // Crear un botón para resetear la vista
 const resetButton = document.createElement('button');
 resetButton.innerText = 'Return to original view';
 resetButton.style.position = 'absolute';
 resetButton.style.top = '20px';
-resetButton.style.left = '20px';
+resetButton.style.right = '20px'; // Cambiado de left a right para moverlo a la esquina superior derecha
 resetButton.style.padding = '10px 20px';
 resetButton.style.zIndex = '1';
 resetButton.style.backgroundColor = '#ffffff';
@@ -332,14 +373,31 @@ resetButton.style.border = 'none';
 resetButton.style.borderRadius = '5px';
 resetButton.style.cursor = 'pointer';
 resetButton.style.boxShadow = '0 2px 5px rgba(0,0,0,0.3)';
-resetButton.style.display = 'none';
+resetButton.style.display = 'none'; // Inicialmente oculto
 document.body.appendChild(resetButton);
+
+// Crear un cuadro para mostrar información del planeta
+const infoBox = document.createElement('div');
+infoBox.id = 'planet-info';
+infoBox.style.position = 'absolute';
+infoBox.style.top = '20px';
+infoBox.style.left = '20px';
+infoBox.style.padding = '10px';
+infoBox.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+infoBox.style.color = '#ffffff';
+infoBox.style.fontFamily = 'Arial, sans-serif';
+infoBox.style.borderRadius = '5px';
+infoBox.style.maxWidth = '300px';
+infoBox.style.display = 'none'; // Inicialmente oculto
+document.body.appendChild(infoBox);
 
 // Añadir el listener para el botón de reset
 resetButton.addEventListener('click', () => {
     if (isZooming) return; // Evitar interrumpir una animación de zoom en curso
     resetView();
 });
+
+// Función para volver a la vista original (zoom out y dejar de seguir)
 function resetView() {
     if (!selectedPlanet) return; // Si no hay planeta seleccionado, no hacer nada
 
@@ -348,7 +406,9 @@ function resetView() {
     selectedPlanet = null; // Dejar de seguir al planeta
 
     resetButton.style.display = 'none'; // Ocultar el botón al hacer zoom out
+    infoBox.style.display = 'none'; // Ocultar el cuadro de información
 }
+
 // Función para manejar el clic del ratón
 function onMouseClick(event) {
     if (isZooming) return; // Evitar múltiples zooms simultáneos
@@ -374,9 +434,35 @@ function onMouseClick(event) {
             zoomStartTime = performance.now();
 
             resetButton.style.display = 'block'; // Mostrar el botón cuando se selecciona un planeta
+
+            // Mostrar la información del planeta
+            showPlanetInfo(planetData);
         }
     }
 }
+
+// Añadir el listener para el clic
+window.addEventListener('click', onMouseClick);
+
+// Función para mostrar la información del planeta
+function showPlanetInfo(planet) {
+    infoBox.innerHTML = `
+        <h2>${planet.name}</h2>
+        <p><strong>Mass:</strong> ${planet.info.Mass}</p>
+        <p><strong>Diameter:</strong> ${planet.info.Diameter}</p>
+        <p><strong>Distance from Sun:</strong> ${planet.info.DistanceFromSun}</p>
+        <p><strong>Moons:</strong> ${planet.info.Moons}</p>
+    `;
+    infoBox.style.display = 'block';
+}
+
+// Función para calcular la posición deseada de la cámara respecto al planeta
+function getDesiredCameraPosition(planetPosition) {
+    // Clone el vector de posición del planeta
+    const desiredPosition = planetPosition.clone().add(cameraOffset);
+    return desiredPosition;
+}
+
 // Función de animación
 let time = 0;
 const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbital
