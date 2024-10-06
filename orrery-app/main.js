@@ -1,126 +1,126 @@
 import * as THREE from 'three';
-import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-// ---------------------------------------------
-//           Clase Trajectory
-// ---------------------------------------------
-function Trajectory(name, smA, oI, aP, oE, aN, mAe, Sidereal) {
-    this.name = name;                         // nombre del objeto
-    this.smA = smA;                           // semi eje mayor
-    this.oI = oI * 0.01745329;                // inclinación orbital --> convertir grados a radianes
-    this.aP = aP * 0.01745329;                // argumento del periastro --> convertir grados a radianes
-    this.oE = oE;                             // excentricidad orbital
-    this.aN = aN * 0.01745329;                // nodo ascendente --> convertir grados a radianes
-    this.period = Sidereal;                   // periodo sideral como un múltiplo del periodo orbital de la Tierra
-    this.epochMeanAnomaly = mAe * 0.01745329; // anomalia media en la época 
-    this.trueAnomoly = 0;                     // inicializar en la anomalia media en la época
-    this.position = [0, 0, 0];
-    this.time = 0;
-}
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 
-
-// ---------------------------------------------
-//        Propagador de Trayectorias
-// ---------------------------------------------
-Trajectory.prototype.propagate = function(uA) {
-    var pos = [];
-    var theta = uA;                          // Actualizar la anomalia verdadera.
-    var smA = this.smA;                      // Semi-eje mayor
-    var oI = this.oI;                        // Inclinación orbital
-    var aP = this.aP;                        // Obtener los elementos orbitales del objeto.
-    var oE = this.oE;                        // Excentricidad orbital
-    var aN = this.aN;                        // Nodo ascendente
-    var sLR = smA * (1 - oE ** 2);           // Calcular el semi-latus recto.
-    var r = sLR / (1 + oE * Math.cos(theta)); // Calcular la distancia radial.
-
-    // Calcular las coordenadas de posición
-    pos[0] = r * (Math.cos(aP + theta) * Math.cos(aN) - Math.cos(oI) * Math.sin(aP + theta) * Math.sin(aN));
-    pos[1] = r * (Math.cos(aP + theta) * Math.sin(aN) + Math.cos(oI) * Math.sin(aP + theta) * Math.cos(aN));
-    pos[2] = r * (Math.sin(aP + theta) * Math.sin(oI));
-
-    return pos;
-};
-
-// ---------------------------------------------
-//        Traza las Órbitas
-// ---------------------------------------------
-function traceOrbits(scene, heavenlyBodies) {
-    var geometry;
-    var material = new THREE.LineBasicMaterial({ color: 0xCCCCFF });
-    console.log("Entrando en traceOrbits " + heavenlyBodies.length);
-    
-    for (var hB in heavenlyBodies) {
-        var orbPos = [];
-        var j = 0;
-        geometry = new THREE.BufferGeometry();   // Crear un objeto para cada órbita.
-        var positions = [];
-
-        for (let i = 0; i <= 6.28; i += 0.0785) {
-            orbPos = heavenlyBodies[hB].propagate(i); // Propagar las órbitas.
-            positions.push(orbPos[0], orbPos[1], orbPos[2]); // Agregar posiciones a la lista.
-        }
-
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3)); // Establecer las posiciones
-        var line = new THREE.Line(geometry, material);
-        line.name = heavenlyBodies[hB].name + "_trace";
-
-        scene.add(line);
-        console.log("Nombre de la línea " + line.name);
-    }
-    console.log("Saliendo de traceOrbits");
-}
-
-// Aquí puedes incluir tus funciones para calcular anomalías si es necesario
-// ...
-
-// ---------------------------------------------
-//             Configuración de Three.js
-// ---------------------------------------------
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+var scene = new THREE.Scene();
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-camera.position.set(0, 0, 0);
+// Crear la instancia de OrbitControls
+var controls = new OrbitControls(camera, renderer.domElement);
+camera.position.set(0, 200, 400);
+controls.update();
 
-const orbit= new OrbitControls(camera, renderer.domElement);
+var light = new THREE.PointLight(0xffffff, 1);
+light.position.set(0, 0, 0); // Colocar la luz en el centro (el sol)
+scene.add(light);
+scene.add(new THREE.AmbientLight(0x404040)); // Luz ambiental
 
+// Material para los planetas
+var planetMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
 
+// Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
+// L (mean longitude), long.peri. (longitude of perihelion), long.node. (longitude of ascending node)
+// Fuente: Tabla proporcionada
+var orbitalElements = [
+  { name: "Mercury", a: 0.38709843, e: 0.20563661, i: 7.00559432, long_peri: 77.45771895, long_node: 48.33961819, period: 87.97 },
+  { name: "Venus", a: 0.72332102, e: 0.00676399, i: 3.39777545, long_peri: 131.76755713, long_node: 76.67261496, period: 224.70 },
+  { name: "Earth", a: 1.00000018, e: 0.01673163, i: -0.00054346, long_peri: 102.93005885, long_node: -5.11260389, period: 365.25 },
+  { name: "Mars", a: 1.52371243, e: 0.09336511, i: 1.85181869, long_peri: -23.91744784, long_node: 49.71320984, period: 686.98 },
+  { name: "Jupiter", a: 5.20248019, e: 0.04853590, i: 1.29861416, long_peri: 14.27495244, long_node: 100.29282654, period: 4332.59 },
+  { name: "Saturn", a: 9.54149883, e: 0.05550825, i: 2.49424102, long_peri: 92.86136063, long_node: 113.63998702, period: 10759.22 },
+  { name: "Uranus", a: 19.18797948, e: 0.04685740, i: 0.77298127, long_peri: 172.43404441, long_node: 73.96250215, period: 30688.5 },
+  { name: "Neptune", a: 30.06952752, e: 0.00895439, i: 1.77005520, long_peri: 46.68158724, long_node: 131.78635853, period: 60182 }
+];
 
-
-
-
-
-
-
-
-// Ejemplo de cuerpos celestes
-// Definición de planetas usando los elementos orbitales de la tabla
-var heavenlyBodies = [];
-
-heavenlyBodies.push(new Trajectory("Mercury", 0.38709843, 7.00559432, 77.45771895, 0.20563661, 48.33961819, 252.25166724 - 77.45771895, 87.969));  // Periodo de Mercurio en días terrestres
-heavenlyBodies.push(new Trajectory("Venus", 0.72332102, 3.39777545, 131.76755713, 0.00676399, 76.67261496, 181.97970850 - 131.76755713, 224.701)); // Periodo de Venus en días terrestres
-heavenlyBodies.push(new Trajectory("Earth", 1.00000018, 0.00054346, 102.93005885, 0.01673163, -5.11260389, 100.46691572 - 102.93005885, 365.256)); // Periodo de la Tierra
-heavenlyBodies.push(new Trajectory("Mars", 1.52371243, 1.85181869, -23.91744784, 0.09336511, 49.71320984, -4.56813164 - (-23.91744784), 686.980)); // Periodo de Marte en días
-heavenlyBodies.push(new Trajectory("Jupiter", 5.20248019, 1.29861416, 14.27495244, 0.04853590, 100.29282654, 34.33479152 - 14.27495244, 4332.59));  // Periodo de Júpiter en días
-heavenlyBodies.push(new Trajectory("Saturn", 9.54149883, 2.49424102, 92.86136063, 0.05550825, 113.63998702, 50.07571329 - 92.86136063, 10759.22));  // Periodo de Saturno en días
-heavenlyBodies.push(new Trajectory("Uranus", 19.18797948, 0.77298127, 172.43404441, 0.04685740, 73.96250215, 314.20276625 - 172.43404441, 30685.4)); // Periodo de Urano en días
-heavenlyBodies.push(new Trajectory("Neptune", 30.06952752, 1.77005520, 46.68158724, 0.00895439, 131.78635853, 304.22289287 - 46.68158724, 60190.03)); // Periodo de Neptuno en días
-
-
-// Traza las órbitas
-traceOrbits(scene, heavenlyBodies);
-
-// Posiciona la cámara
-camera.position.z = 150;
-orbit.update();
-// Función de animación
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+// Conversión de grados a radianes
+function toRadians(deg) {
+  return deg * Math.PI / 180;
 }
 
+// Constructor de trayectorias
+function Trajectory(planet) {
+  this.name = planet.name;
+  this.smA = planet.a;
+  this.eccentricity = planet.e;
+  this.inclination = toRadians(planet.i);
+  this.argumentOfPerigee = toRadians(planet.long_peri);
+  this.longitudeOfAscendingNode = toRadians(planet.long_node);
+  this.period = planet.period;
+  this.trueAnomaly = 0; // Inicializar la anomalía verdadera
+  this.position = [0, 0, 0];
+  this.time = 0;
+}
 
-// Inicia la animación
+// Función para propagar la órbita
+Trajectory.prototype.propagate = function (trueAnomaly) {
+  var r = (this.smA * (1 - this.eccentricity ** 2)) / (1 + this.eccentricity * Math.cos(trueAnomaly));
+  var x = r * (Math.cos(this.argumentOfPerigee + trueAnomaly) * Math.cos(this.longitudeOfAscendingNode) -
+               Math.sin(this.argumentOfPerigee + trueAnomaly) * Math.cos(this.inclination) * Math.sin(this.longitudeOfAscendingNode));
+  var y = r * (Math.cos(this.argumentOfPerigee + trueAnomaly) * Math.sin(this.longitudeOfAscendingNode) +
+               Math.sin(this.argumentOfPerigee + trueAnomaly) * Math.cos(this.inclination) * Math.cos(this.longitudeOfAscendingNode));
+  var z = r * (Math.sin(this.argumentOfPerigee + trueAnomaly) * Math.sin(this.inclination));
+  return [x * 100, y * 100, z * 100]; // Multiplicar por 100 para hacer más visibles las órbitas
+};
+
+// Crear objetos de trayectorias
+var heavenlyBodies = [];
+orbitalElements.forEach(planet => {
+  heavenlyBodies.push(new Trajectory(planet));
+});
+
+// Añadir órbitas a la escena
+function traceOrbits() {
+  var geometry, material = new THREE.LineBasicMaterial({ color: 0xCCCCFF });
+
+  heavenlyBodies.forEach(body => {
+    geometry = new THREE.BufferGeometry();
+    var positions = [];
+    for (var i = 0; i <= 2 * Math.PI; i += 0.1) {
+      var pos = body.propagate(i);
+      positions.push(pos[0], pos[1], pos[2]);
+    }
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    var line = new THREE.Line(geometry, material);
+    scene.add(line);
+  });
+}
+
+// Añadir planetas a la escena
+function addPlanets() {
+  heavenlyBodies.forEach(body => {
+    var planetGeometry = new THREE.SphereGeometry(2, 32, 32); // Tamaño de los planetas
+    var planetMesh = new THREE.Mesh(planetGeometry, planetMaterial);
+    var initialPos = body.propagate(body.trueAnomaly);
+    planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
+    planetMesh.name = body.name;
+    scene.add(planetMesh);
+  });
+}
+
+// Animación para actualizar las posiciones de los planetas
+function animate() {
+  requestAnimationFrame(animate);
+
+  heavenlyBodies.forEach(body => {
+    var planet = scene.getObjectByName(body.name);
+    var newPos = body.propagate(body.trueAnomaly);
+    planet.position.set(newPos[0], newPos[1], newPos[2]);
+
+    // Incrementar la anomalía verdadera para animar la órbita
+    body.trueAnomaly += (2 * Math.PI / body.period) * 0.1; // Ajustar la velocidad según el periodo
+    if (body.trueAnomaly > 2 * Math.PI) {
+      body.trueAnomaly -= 2 * Math.PI;
+    }
+  });
+
+  controls.update();
+  renderer.render(scene, camera);
+}
+
+// Llamadas a las funciones
+traceOrbits();
+addPlanets();
 animate();
