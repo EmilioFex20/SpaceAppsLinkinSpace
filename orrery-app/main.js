@@ -288,11 +288,14 @@ function onDocumentMouseDown(event) {
 
 // Función para hacer zoom en un planeta
 function zoomToPlanet(targetPosition, planet) {
+  console.log(planet);
     // Ajustar la posición de la cámara para hacer zoom en el planeta
     const zoomFactor = 3; // Factor de zoom
     const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200); // Offset para alejar un poco la cámara
     camera.position.copy(targetPosition).add(offset);
-    
+    const planetInfoDiv = document.getElementById('planet-info');
+    const planetName = document.getElementById('planet-name');
+    const planetParams = document.getElementById('planet-params');
     // Configurar controls para seguir el planeta
     controls.target.copy(targetPosition);
     
@@ -300,7 +303,15 @@ function zoomToPlanet(targetPosition, planet) {
     const duration = 1000; // Duración de la animación en milisegundos
     const startPosition = camera.position.clone();
     const startTime = performance.now();
-
+    planetName.innerText = planet.name; // Asume que cada planeta tiene una propiedad "name"
+    planetParams.innerText = `
+        Eccentricity: ${'.0933934'}
+        semi-major axis: ${'1.52371034'}
+        Inclination: ${'1.84969142'}
+        perihelion longitude: ${'-23.94362959'}
+        longitude of ascending node: ${'49.55953891'}
+    `;
+    planetInfoDiv.style.display = 'block';
     function animateZoom() {
         const elapsed = performance.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
