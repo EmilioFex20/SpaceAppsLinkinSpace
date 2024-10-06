@@ -38,7 +38,7 @@ function createSun() {
   scene.add(sun);
 }
 
-var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xd6d6d6 });
 
 // Material para los planetas
 
@@ -58,7 +58,7 @@ var planetSizes = {
 // Factores de escala
 var distanceScale = 100; // Reducir el factor de escala para las distancias orbitales
 var sizeScale = 0.0001;   // Aumentar el tamaño de los planetas para que sean más visibles
-var asteroidScale = .01  
+var asteroidScale = .022  
 
 
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
