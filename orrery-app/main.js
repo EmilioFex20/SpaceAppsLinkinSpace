@@ -57,7 +57,7 @@ var planetSizes = {
 
 // Factores de escala
 var distanceScale = 100; // Reducir el factor de escala para las distancias orbitales
-var sizeScale = 0.00001;   // Aumentar el tamaño de los planetas para que sean más visibles
+var sizeScale = 0.0001;   // Aumentar el tamaño de los planetas para que sean más visibles
 var asteroidScale = .01  
 
 
