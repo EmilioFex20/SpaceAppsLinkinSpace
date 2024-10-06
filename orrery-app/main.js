@@ -209,10 +209,6 @@ const planets = [
         }
     }
 ];
-
-
-}
-
 // Añadir planetas y sus órbitas a la escena
 planets.forEach(planet => {
     // Crear mesh del planeta con MeshPhongMaterial para mejor interacción con luces
@@ -431,9 +427,8 @@ const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbi
     }
 
     renderer.render(scene, camera);
-}
 
-animate();
+    animate();
 
 // Manejar el redimensionamiento de la ventana
 window.addEventListener('resize', () => {
