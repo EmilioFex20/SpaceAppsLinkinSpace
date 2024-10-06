@@ -159,91 +159,7 @@ const planets = [
     }
 ];
 
-// Función para convertir grados a radianes
-function toRadians(degrees) {
-    return degrees * (Math.PI / 180);
-}
 
-// Función para calcular la posición de un planeta en 3D
-function calculatePosition(planet, time) {
-    // Calcular la anomalía media (M)
-    const meanAnomaly = toRadians(
-        (planet.meanLongitude + (360 / planet.orbitalPeriod) * time) % 360
-    );
-
-    // Aproximación simplificada de la anomalía verdadera (ν = M)
-    // Nota: Para mayor precisión, se debería resolver la ecuación de Kepler
-    const trueAnomaly = meanAnomaly;
-
-    // Distancia radial desde el Sol al planeta
-    const r = planet.semiMajorAxis * (1 - planet.eccentricity * Math.cos(trueAnomaly));
-
-    // Posición en el plano orbital
-    const xOrbital = r * Math.cos(trueAnomaly);
-    const yOrbital = r * Math.sin(trueAnomaly);
-
-    // Rotación por argumento del periapsis (ω) alrededor del eje Z
-    const cosArgPeriapsis = Math.cos(toRadians(planet.argumentOfPeriapsis));
-    const sinArgPeriapsis = Math.sin(toRadians(planet.argumentOfPeriapsis));
-
-    const xRotated = xOrbital * cosArgPeriapsis - yOrbital * sinArgPeriapsis;
-    const yRotated = xOrbital * sinArgPeriapsis + yOrbital * cosArgPeriapsis;
-
-    // Inclinación de la órbita (i) alrededor del eje X
-    const cosInclination = Math.cos(toRadians(planet.inclination));
-    const sinInclination = Math.sin(toRadians(planet.inclination));
-
-    const zInclined = yRotated * sinInclination;
-    const yInclined = yRotated * cosInclination;
-
-    // Rotación por longitud del nodo ascendente (Ω) alrededor del eje Z
-    const cosLongAscNode = Math.cos(toRadians(planet.longitudeOfAscendingNode));
-    const sinLongAscNode = Math.sin(toRadians(planet.longitudeOfAscendingNode));
-
-    const xFinal = xRotated * cosLongAscNode - yInclined * sinLongAscNode;
-    const yFinal = xRotated * sinLongAscNode + yInclined * cosLongAscNode;
-
-    return { x: xFinal, y: yFinal, z: zInclined };
-}
-
-// Función para crear una órbita elíptica correctamente orientada
-function createOrbit(planet) {
-    // Crear una curva elíptica
-    const curve = new THREE.EllipseCurve(
-        0, 0, // Centro de la elipse
-        planet.semiMajorAxis, planet.semiMajorAxis * Math.sqrt(1 - planet.eccentricity ** 2), // Radios X e Y
-        0, 2 * Math.PI, // Ángulo de inicio y fin
-        false, // Sentido horario
-        0 // Ángulo de rotación inicial
-    );
-
-    // Obtener los puntos de la curva
-    const points = curve.getPoints(100);
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-
-    // Crear material para la órbita
-    const material = new THREE.LineBasicMaterial({ color: 0xffffff }); // Líneas blancas
-
-    // Crear la línea de la órbita
-    const ellipse = new THREE.Line(geometry, material);
-
-    // Crear un Object3D para aplicar las rotaciones en el orden correcto
-    const orbit = new THREE.Object3D();
-
-    // Rotar por la longitud del nodo ascendente (Ω) alrededor del eje Z
-    orbit.rotation.z = toRadians(planet.longitudeOfAscendingNode);
-
-    // Rotar por la inclinación (i) alrededor del eje X
-    orbit.rotation.x = toRadians(planet.inclination);
-
-    // Rotar por el argumento del periapsis (ω) alrededor del eje Z
-    ellipse.rotation.z = toRadians(planet.argumentOfPeriapsis);
-
-    // Añadir la elipse al Object3D
-    orbit.add(ellipse);
-
-    // Añadir el Object3D a la escena
-    scene.add(orbit);
 }
 
 // Añadir planetas y sus órbitas a la escena
@@ -381,21 +297,7 @@ function onMouseClick(event) {
 let time = 0;
 const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbital
 
-function animate() {
-    requestAnimationFrame(animate);
 
-    // Actualizar posiciones y rotaciones de los planetas
-    planets.forEach(planet => {
-        const position = calculatePosition(planet, time);
-        planet.mesh.position.set(position.x, position.y, position.z); // Mapeo correcto a X, Y, Z
-
-        // Rotación propia alrededor del eje Y
-        const rotationSpeed = (0.01 / Math.abs(planet.rotationPeriod)); // Ajustar la velocidad
-        const rotationAxis = new THREE.Vector3(0, 1, 0); // Eje Y
-        planet.mesh.rotateOnAxis(rotationAxis, rotationSpeed);
-    });
-
-    time += timeIncrement; // Incrementar tiempo (ajustar para velocidad orbital)
 
     // Manejar el zoom y seguimiento
     const currentTime = performance.now();
