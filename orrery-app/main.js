@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { asteroids } from './api.js'; // Importar los datos de los asteroides
 
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000); // Aumentar el "far" para ver objetos lejanos
+var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000); // Aumentar el "far" para ver objetos lejanos
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
@@ -52,6 +52,30 @@ var planetSizes = {
   Uranus: 50724,
   Neptune: 49244
 };
+// Función para crear un fondo de estrellas
+function createStarfield(numStars) {
+    const starsGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(numStars * 3); // 3 coordenadas por estrella (x, y, z)
+
+    for (let i = 0; i < numStars; i++) {
+        const x = (Math.random() - 0.5) * 8000; // Ajusta el rango según tus necesidades
+        const y = (Math.random() - 0.5) * 8000;
+        const z = (Math.random() - 0.5) * 8000;
+        
+        positions.set([x, y, z], i * 3);
+    }
+
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+
+    return stars;
+}
+
+// Crear el fondo de estrellas y agregarlo a la escena
+const starfield = createStarfield(10000); // Cambia el número para más o menos estrellas
+scene.add(starfield);
 
 // Factores de escala
 var distanceScale = 100; // Escala para las distancias orbitales
@@ -159,28 +183,38 @@ orbitalElements.forEach(planet => {
 });
 // Añadir órbitas a la escena
 function traceOrbits() {
-    var geometry, material = new THREE.LineBasicMaterial({ color: 0xCCCCFF });
+    var colors = [
+        0xCCCCFF, // Mercury
+        0xFFCCCC, // Venus
+        0xCCFFCC, // Earth
+        0xFFCC99, // Mars
+        0xFFFF99, // Jupiter
+        0x99CCFF, // Saturn
+        0xFF99CC, // Uranus
+        0xCCCCFF  // Neptune
+    ];
 
-    heavenlyBodies.forEach(body => {
-        geometry = new THREE.BufferGeometry();
+    heavenlyBodies.forEach((body, index) => {
+        var geometry = new THREE.BufferGeometry();
         var positions = [];
         const step = 0.01; // Pasos más pequeños para una línea más suave
 
         // Recorrer de 0 a 2π para crear la elipse completa
         for (var i = 0; i <= 2 * Math.PI; i += step) {
-            // Obtener la posición del planeta en ese ángulo
             var pos = body.propagate(i);
             positions.push(pos[0], pos[1], pos[2]);
         }
-        // Asegúrate de que el primer punto se repita para cerrar la elipse
+        // Cerrar la elipse
         var firstPos = body.propagate(0);
-        positions.push(firstPos[0], firstPos[1], firstPos[2]); // Agregar el primer punto nuevamente
+        positions.push(firstPos[0], firstPos[1], firstPos[2]);
 
         geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        var material = new THREE.LineBasicMaterial({ color: colors[index] }); // Usar el color correspondiente
         var line = new THREE.Line(geometry, material);
         scene.add(line);
     });
 }
+
 
 // Añadir planetas a la escenafunction addPlanets() {
 // Añadir planetas a la escena
