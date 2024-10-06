@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +13,7 @@
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-color: #131111;
+            background-color: #000000;
             color: #fff;
         }
 
@@ -25,7 +24,7 @@
         }
 
         iframe {
-            display:none;
+            display: none;
             border: none;
             width: 100%; /* Ancho completo */
             height: 100%; /* Alto completo */
@@ -36,54 +35,160 @@
         }
 
         .space-button {
-    background: linear-gradient(90deg, #1d1d1d, #3d3d3d);
-    border: 2px solid #e80ff0; 
-    color: #ffffff; /* Texto blanco */
-    padding: 15px 30px;
-    font-size: 20px;
-    font-family: 'Italic', sans-serif;
-    cursor: pointer;
-    border-radius: 10px;
-    transition: background 0.3s, transform 0.3s;
-    box-shadow: 0 0 10px rgba(178, 9, 184, 0.5); 
-}
+            background: linear-gradient(90deg, #1d1d1d, #3d3d3d);
+            border: 2px solid #e80ff0;
+            color: #ffffff; /* Texto blanco */
+            padding: 15px 30px;
+            font-size: 20px;
+            font-family: 'Italic', sans-serif;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background 0.3s, transform 0.3s;
+            box-shadow: 0 0 10px rgba(178, 9, 184, 0.5);
+        }
 
-.space-button:hover {
-    background: linear-gradient(90deg, #3a026e, #3e0250);
-    transform: scale(2); 
-}
+        .space-button:hover {
+            background: linear-gradient(90deg, #3a026e, #3e0250);
+            transform: scale(2);
+        }
 
-.space-button:focus {
-    outline: none; /* Quita el borde del foco */
-}
-
+        .space-button:focus {
+            outline: none; /* Quita el borde del foco */
+        }
+        .wraper1{
+          display: flex;
+        }
+        .wraper2{
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+        }
+        .wraper3{
+          display: flex;
+          justify-content: center;
+          margin-top: 10px;
+          margin-left: 20px;
+        }
     </style>
 </head>
 <body>
-
-    <h1>LINKIN SPACE</h1>
-    <h1>3D Orrery-App</h1>
-    <h2>Team: Derek Beltrán, Gustavo Flores, Aarian Arredondo y Emilio Fernández</h2>
-    <br><br>
+    <div class="wraper1">
+    <div class="wraper2">
+      <h1>LINKIN SPACE</h1>
+      <h1>3D Orrery-WebApp</h1>
+    </div>
+    <div class="wraper3">
+      <img src="https://1000marcas.net/wp-content/uploads/2019/12/Symbol-Linkin-Park.jpg" width="140px" height="130px"/>
+    </div>
+    </div>
+    <br><h2>Team: Derek Beltrán, Gustavo Flores, Aarian Arredondo, Emilio Fernández</h2>
+    <br>
     <button id="show-simulation-btn" class="space-button">Show Orrery</button>
 
-   
     <iframe id="solar-system-iframe" src="emb.html"></iframe>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
-        // Obtén el botón y el iframe
-        const button = document.getElementById('show-simulation-btn');
-        const iframe = document.getElementById('solar-system-iframe');
+        var scene, camera, renderer;
+        var earthMesh, particles = [], particleGeometry, particleMaterial;
+        var isDisintegrating = false;
 
-        // Añade un listener al botón
-        button.addEventListener('click', function() {
-            // Muestra el iframe cuando el botón es clicado
-            iframe.style.display = 'block';
-            console.log(iframe.style.display);
-            // Opcionalmente, oculta el botón después de hacer clic
-            button.style.display = 'none';
+        init();
+        animate();
 
-        });
+        function init() {
+            scene = new THREE.Scene();
+
+            camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 1000);
+            camera.position.z = 5;
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth/2, window.innerHeight/2);
+            document.body.appendChild(renderer.domElement);
+
+            var earthGeometry = new THREE.SphereGeometry(1, 32, 32);  
+            var earthMaterial = new THREE.MeshBasicMaterial({ map: new THREE.TextureLoader().load('./textures/earth.jpg') });
+            earthMesh = new THREE.Mesh(earthGeometry, earthMaterial);
+            scene.add(earthMesh);
+
+            // Evento para desintegrar
+            document.getElementById('show-simulation-btn').addEventListener('click', disintegrate);
+
+            // Redimensionar ventana
+            window.addEventListener('resize', onWindowResize, false);
+
+            // Aquí corriges el botón para mostrar el iframe
+            const button = document.getElementById('show-simulation-btn');
+            const iframe = document.getElementById('solar-system-iframe');
+
+            if (button) {
+                button.addEventListener('click', function () {
+                    iframe.style.display = 'block';
+                    button.style.display = 'none';
+                });
+            }
+        }
+
+        // Función de animación principal
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (!isDisintegrating) {
+                earthMesh.rotation.y += 0.01;  // Rotar la Tierra
+            } else {
+                // Animar las partículas de desintegración
+                particles.forEach(p => {
+                    p.position.x += (Math.random() - 0.5) * 0.05;
+                    p.position.y += (Math.random() - 0.5) * 0.05;
+                    p.position.z += (Math.random() - 0.5) * 0.05;
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // Función para desintegrar la Tierra
+        function disintegrate() {
+            if (isDisintegrating) return;
+
+            earthMesh.visible = false;
+            isDisintegrating = true;
+
+            var count = 1000;
+            particleGeometry = new THREE.BufferGeometry();
+            var positions = new Float32Array(count * 3);
+
+            for (var i = 0; i < count; i++) {
+                var x = (Math.random() - 0.5) * 2;
+                var y = (Math.random() - 0.5) * 2;
+                var z = (Math.random() - 0.5) * 2;
+                positions[i * 3] = x;
+                positions[i * 3 + 1] = y;
+                positions[i * 3 + 2] = z;
+            }
+
+            particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            particleMaterial = new THREE.PointsMaterial({ color: 0x00ff00, size: 0.05 });
+            var particleSystem = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particleSystem);
+
+            for (let i = 0; i < count; i++) {
+                let particle = new THREE.Vector3(
+                    positions[i * 3],
+                    positions[i * 3 + 1],
+                    positions[i * 3 + 2]
+                );
+                particles.push(particle);
+            }
+        }
+
+        // Función para redimensionar ventana
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
     </script>
 </body>
 </html>
