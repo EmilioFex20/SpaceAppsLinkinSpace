@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-
 var scene = new THREE.Scene();
 var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 var renderer = new THREE.WebGLRenderer();
@@ -20,6 +19,7 @@ scene.add(new THREE.AmbientLight(0x404040)); // Luz ambiental
 
 // Material para los planetas
 var planetMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+
 
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
 // L (mean longitude), long.peri. (longitude of perihelion), long.node. (longitude of ascending node)
@@ -78,7 +78,7 @@ function traceOrbits() {
   heavenlyBodies.forEach(body => {
     geometry = new THREE.BufferGeometry();
     var positions = [];
-    for (var i = 0; i <= 2 * Math.PI; i += 0.1) {
+    for (var i = 0; i <= 2 * Math.PI; i += 0.01) {
       var pos = body.propagate(i);
       positions.push(pos[0], pos[1], pos[2]);
     }
@@ -87,7 +87,7 @@ function traceOrbits() {
     scene.add(line);
   });
 }
-
+let planets = [];
 // Añadir planetas a la escena
 function addPlanets() {
   heavenlyBodies.forEach(body => {
@@ -97,8 +97,35 @@ function addPlanets() {
     planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
     planetMesh.name = body.name;
     scene.add(planetMesh);
+    planets.push(planetMesh);
   });
 }
+
+const mousePosition=new THREE.Vector2();
+
+window.addEventListener('mousemove', function(e){
+mousePosition.x=(e.clientX/window.innerWidth)*2-1;
+mousePosition.y=-(e.clientY/window.innerHeight)*2+1;
+});
+
+const rayCaster=new THREE.Raycaster();
+
+window.addEventListener('click', function() {
+  // Actualizar el raycaster con la posición del mouse y la cámara
+  rayCaster.setFromCamera(mousePosition, camera);
+  
+  // Detectar intersecciones con los planetas
+  const intersects = rayCaster.intersectObjects(planets);
+  
+  if (intersects.length > 0) {
+    // Si hay intersección con algún planeta, cambiar su color o realizar una acción
+    const clickedPlanet = intersects[0].object;
+    clickedPlanet.material.color.set(0xff0000); // Cambiar a rojo el planeta clicado
+    console.log('Planeta clicado:', clickedPlanet.name);
+  }
+});
+
+
 
 // Animación para actualizar las posiciones de los planetas
 function animate() {
