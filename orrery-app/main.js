@@ -211,7 +211,7 @@ const planets = [
 ];
 
 
-}
+
 
 
 
@@ -433,7 +433,7 @@ const timeIncrement = 0.1; // Ajusta este valor para controlar la velocidad orbi
     }
 
     renderer.render(scene, camera);
-}
+
 
 animate();
 
