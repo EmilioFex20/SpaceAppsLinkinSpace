@@ -416,6 +416,7 @@ function zoomOutFromPlanet() {
 
 
 // Modificar la función de clic en planetas para mostrar el botón
+// Función para manejar clics en los planetas
 function onDocumentMouseDown(event) {
     event.preventDefault();
 
@@ -432,16 +433,22 @@ function onDocumentMouseDown(event) {
     const intersects = raycaster.intersectObjects(scene.children, true);
 
     if (intersects.length > 0) {
-        const planet = intersects[0].object;
-        
-        // Si el objeto es un planeta, hacer zoom y seguirlo
-        if (planet.name) {
-            const targetPosition = planet.position.clone();
-            zoomToPlanet(targetPosition, planet);
+        let selectedObject = intersects[0].object;
+
+        // Si el objeto pertenece a un grupo (por ejemplo, un planeta con su luna), selecciona el grupo completo
+        if (selectedObject.parent && selectedObject.parent.isGroup) {
+            selectedObject = selectedObject.parent;
+        }
+
+        // Si el objeto es un planeta (grupo), hacer zoom y seguirlo
+        if (selectedObject.name && orbitalElements.find(o => o.name === selectedObject.name)) {
+            const targetPosition = selectedObject.position.clone();
+            zoomToPlanet(targetPosition, selectedObject);
             createBackButton(); // Crear el botón de regreso
         }
     }
 }
+
 // Agregar el evento de clic al documento
 window.addEventListener('mousedown', onDocumentMouseDown, false);
 
