@@ -34,6 +34,7 @@ function createSun() {
   }); // Color amarillo para el Sol
     var sun = new THREE.Mesh(sunGeometry, sunMaterial);
     sun.position.set(0, 0, 0);
+    sun.name = "Sun";
     scene.add(sun);
 }
 var asteroidMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
@@ -53,29 +54,7 @@ var planetSizes = {
   Neptune: 49244
 };
 // Función para crear un fondo de estrellas
-function createStarfield(numStars) {
-    const starsGeometry = new THREE.BufferGeometry();
-    const positions = new Float32Array(numStars * 3); // 3 coordenadas por estrella (x, y, z)
 
-    for (let i = 0; i < numStars; i++) {
-        const x = (Math.random() - 0.5) * 8000; // Ajusta el rango según tus necesidades
-        const y = (Math.random() - 0.5) * 8000;
-        const z = (Math.random() - 0.5) * 8000;
-        
-        positions.set([x, y, z], i * 3);
-    }
-
-    starsGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    
-    const starsMaterial = new THREE.PointsMaterial({ color: 0xffffff, size: 1 });
-    const stars = new THREE.Points(starsGeometry, starsMaterial);
-
-    return stars;
-}
-
-// Crear el fondo de estrellas y agregarlo a la escena
-const starfield = createStarfield(10000); // Cambia el número para más o menos estrellas
-scene.add(starfield);
 
 // Factores de escala
 var distanceScale = 100; // Escala para las distancias orbitales
@@ -259,6 +238,34 @@ function animate() {
             body.trueAnomaly -= 2 * Math.PI;
         }
     });
+    function animate() {
+        requestAnimationFrame(animate);
+    
+        // Actualizar posiciones de los planetas
+        heavenlyBodies.forEach(body => {
+            var planet = scene.getObjectByName(body.name);
+            var newPos = body.propagate(body.trueAnomaly);
+            planet.position.set(newPos[0], newPos[1], newPos[2]);
+    
+            // Incrementar la anomalía verdadera para animar la órbita
+            body.trueAnomaly += (2 * Math.PI / body.period) * 0.1; // Ajustar la velocidad según el periodo
+            if (body.trueAnomaly > 2 * Math.PI) {
+                body.trueAnomaly -= 2 * Math.PI;
+            }
+        });
+    
+        // Si se ha seleccionado un planeta, seguirlo con la cámara
+        if (targetPlanet) {
+            const targetPosition = targetPlanet.position.clone();
+            const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200); // Ajustar el offset si es necesario
+            camera.position.lerp(targetPosition.clone().add(offset), 0.1); // Interpolación suave
+            controls.target.copy(targetPosition); // Actualizar el control para seguir el planeta
+        }
+    
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    
 // Función para manejar clics en los planetas
 function onDocumentMouseDown(event) {
     event.preventDefault();
@@ -286,16 +293,18 @@ function onDocumentMouseDown(event) {
     }
 }
 
+let targetPlanet = null; // Variable para almacenar el planeta seleccionado
+
 // Función para hacer zoom en un planeta
 function zoomToPlanet(targetPosition, planet) {
-  console.log(planet);
+    // Guardar el planeta como el objetivo a seguir
+    targetPlanet = planet;
+
     // Ajustar la posición de la cámara para hacer zoom en el planeta
     const zoomFactor = 3; // Factor de zoom
     const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200); // Offset para alejar un poco la cámara
     camera.position.copy(targetPosition).add(offset);
-    const planetInfoDiv = document.getElementById('planet-info');
-    const planetName = document.getElementById('planet-name');
-    const planetParams = document.getElementById('planet-params');
+
     // Configurar controls para seguir el planeta
     controls.target.copy(targetPosition);
     
@@ -303,15 +312,7 @@ function zoomToPlanet(targetPosition, planet) {
     const duration = 1000; // Duración de la animación en milisegundos
     const startPosition = camera.position.clone();
     const startTime = performance.now();
-    planetName.innerText = planet.name; // Asume que cada planeta tiene una propiedad "name"
-    planetParams.innerText = `
-        Eccentricity: ${'.0933934'}
-        semi-major axis: ${'1.52371034'}
-        Inclination: ${'1.84969142'}
-        perihelion longitude: ${'-23.94362959'}
-        longitude of ascending node: ${'49.55953891'}
-    `;
-    planetInfoDiv.style.display = 'block';
+    
     function animateZoom() {
         const elapsed = performance.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
@@ -326,9 +327,10 @@ function zoomToPlanet(targetPosition, planet) {
     
     animateZoom();
 }
+
 // Variable para almacenar la posición original de la cámara
 const originalCameraPosition = camera.position.clone();
-const originalCameraTarget = controls.target.clone();
+
 let backButton;
 
 // Función para crear el botón de regreso
@@ -343,16 +345,21 @@ function createBackButton() {
 
     backButton.addEventListener('click', () => {
         zoomOutFromPlanet();
+        backButton.style.display = "none";
     });
 }
 
 // Función para hacer zoom fuera del planeta
 function zoomOutFromPlanet() {
-    // Restablecer la posición de la cámara a la original
-    const zoomFactor = 3; // Factor de zoom
-    const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200);
-    
-    // Animar la cámara hacia la posición original
+    const sun = scene.getObjectByName("Sun"); // Asegúrate de que el Sol tenga el nombre 'Sun' en tu escena
+    if (!sun) {
+        console.error("No se encontró el objeto del Sol en la escena.");
+        return;
+    }
+
+    const sunPosition = sun.position.clone(); // Posición del Sol
+    const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(400); // Ajusta el offset si es necesario para la vista
+
     const duration = 1000; // Duración de la animación en milisegundos
     const startPosition = camera.position.clone();
     const startTime = performance.now();
@@ -362,19 +369,21 @@ function zoomOutFromPlanet() {
         const progress = Math.min(elapsed / duration, 1);
         
         // Interpolación lineal para el movimiento
-        camera.position.lerpVectors(startPosition, originalCameraPosition.clone().add(offset), progress);
+        camera.position.lerpVectors(startPosition, sunPosition.clone().add(offset), progress);
         
         if (progress < 1) {
             requestAnimationFrame(animateZoomOut);
         } else {
-            // Después de completar el zoom, eliminar el botón
-            document.body.removeChild(backButton);
-            backButton = null;
+            // Al finalizar el zoom out, dejar de seguir el planeta y enfocar el Sol
+            targetPlanet = null; // Dejar de seguir cualquier planeta
+            controls.target.copy(sunPosition); // Enfocar el Sol con los controles
         }
     }
 
     animateZoomOut();
 }
+
+
 
 // Modificar la función de clic en planetas para mostrar el botón
 function onDocumentMouseDown(event) {
