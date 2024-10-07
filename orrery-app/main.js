@@ -26,7 +26,7 @@ const sunTexture = textureLoader.load('/textures/sun.jpg'); // Asegúrate de que
 
 // Crear el Sol
 function createSun() {
-    var sunGeometry = new THREE.SphereGeometry(10, 32, 32); // Tamaño del Sol
+    var sunGeometry = new THREE.SphereGeometry((1390900*.00001)/2, 32, 32); // Tamaño del Sol
     var sunMaterial = new THREE.MeshBasicMaterial({ 
       map: sunTexture
   }); // Material con textura para el Sol
@@ -51,8 +51,8 @@ var planetSizes = {
 
 // Factores de escala
 var distanceScale = 100; // Escala para las distancias orbitales
-var sizeScale = 0.001;  // Escala para los tamaños de los planetas
-var asteroidScale = 0.1;  
+var sizeScale = 0.0001;  // Escala para los tamaños de los planetas
+var asteroidScale = 0.05999;  
 
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
 // L (mean longitude), long.peri. (longitude of perihelion), long.node. (longitude of ascending node)
@@ -60,11 +60,11 @@ var orbitalElements = [
     { name: "Mercury", a: 0.38709843, e: 0.20563661, i: 7.00559432, long_peri: 77.45771895, long_node: 48.33961819, period: 87.97, texture:"./textures/mercury.jpg" },
     { name: "Venus", a: 0.72332102, e: 0.00676399, i: 3.39777545, long_peri: 131.76755713, long_node: 76.67261496, period: 224.70, texture:"./textures/venus.jpg" },
     { name: "Earth", a: 1.00000018, e: 0.01673163, i: -0.00054346, long_peri: 102.93005885, long_node: -5.11260389, period: 365.25, texture:"./textures/earth.jpg", 
-      moon: { size: 0.1, distance: 0.27, texture: "./textures/moon.jpg" } 
+      moon: { size: 0.01, distance: 0.027, texture: "./textures/moon.jpg" } 
     },
     { name: "Mars", a: 1.52371243, e: 0.09336511, i: 1.85181869, long_peri: -23.91744784, long_node: 49.71320984, period: 686.98, texture:"./textures/mars.jpg" },
     { name: "Jupiter", a: 5.20248019, e: 0.04853590, i: 1.29861416, long_peri: 14.27495244, long_node: 100.29282654, period: 4332.59, texture:"./textures/jupiter.jpg", 
-      moon: { size: 0.3, distance: 0.5, texture: "./textures/moon.jpg" } 
+      moon: { size: 0.03, distance: 0.5, texture: "./textures/moon.jpg" } 
     },
     { name: "Saturn", a: 9.54149883, e: 0.05550825, i: 2.49424102, long_peri: 92.86136063, long_node: 113.63998702, period: 10759.22, texture:"./textures/saturn.jpg" },
     { name: "Uranus", a: 19.18797948, e: 0.04685740, i: 0.77298127, long_peri: 172.43404441, long_node: 73.96250215, period: 30688.5, texture:"./textures/uranus.jpg" },
@@ -314,7 +314,7 @@ function animate() {
     // Manejar la cámara si se está siguiendo un planeta
     if (targetPlanet) {
         const targetPosition = targetPlanet.position.clone();
-        const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200); // Ajustar el offset si es necesario
+        const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(20); // Ajustar el offset si es necesario
         camera.position.lerp(targetPosition.clone().add(offset), 0.1); // Interpolación suave
         controls.target.copy(targetPosition); // Actualizar el control para seguir el planeta
     }
@@ -361,11 +361,13 @@ let targetPlanet = null; // Variable para almacenar el planeta seleccionado
 // Función para hacer zoom en un planeta
 function zoomToPlanet(targetPosition, planet) {
     // Guardar el planeta como el objetivo a seguir
-    targetPlanet = planet;
-
+    if (targetPlanet !== planet) {
+        targetPlanet = planet;
+    }
+    
     // Ajustar la posición de la cámara para hacer zoom en el planeta
-    const zoomFactor = 3; // Factor de zoom
-    const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(200); // Offset para alejar un poco la cámara
+    const zoomFactor = 2; // Factor de zoom ajustable
+    const offset = new THREE.Vector3(0, 0, 1).normalize().multiplyScalar(zoomFactor); // Offset ajustado con el zoomFactor
 
     // Animar la cámara hacia la posición del planeta
     const duration = 1000; // Duración de la animación en milisegundos
@@ -389,6 +391,8 @@ function zoomToPlanet(targetPosition, planet) {
     animateZoom();
 }
 
+
+
 // Variable para almacenar la posición original de la cámara
 const originalCameraPosition = camera.position.clone();
 
@@ -396,9 +400,15 @@ const originalCameraPosition = camera.position.clone();
 let backButton;
 
 // Función para crear el botón de regreso
+// Función para crear el botón de regreso
 function createBackButton() {
-    if (backButton) return; // Evitar crear múltiples botones
+    // Eliminar el botón previo si existe
+    if (backButton) {
+        backButton.removeEventListener('click', zoomOutFromPlanet);
+        document.body.removeChild(backButton);
+    }
 
+    // Crear un nuevo botón de regreso
     backButton = document.createElement('button');
     backButton.innerText = 'Regresar';
     backButton.style.position = 'absolute';
@@ -407,9 +417,9 @@ function createBackButton() {
     backButton.style.zIndex = '10';
     document.body.appendChild(backButton);
 
+    // Agregar evento al botón para regresar
     backButton.addEventListener('click', () => {
         zoomOutFromPlanet();
-        backButton.style.display = "none";
     });
 }
 
@@ -429,25 +439,30 @@ function zoomOutFromPlanet() {
     const startPosition = camera.position.clone();
     const startTime = performance.now();
 
+    // Animación para hacer zoom out al sol
     function animateZoomOut() {
         const elapsed = performance.now() - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        
+
         // Interpolación lineal para el movimiento
         camera.position.lerpVectors(startPosition, targetCameraPosition, progress);
         controls.target.lerp(sunPosition, progress);
-        
+
         if (progress < 1) {
             requestAnimationFrame(animateZoomOut);
         } else {
-            // Al finalizar el zoom out, dejar de seguir el planeta y enfocar el Sol
-            targetPlanet = null; // Dejar de seguir cualquier planeta
-            controls.target.copy(sunPosition); // Enfocar el Sol con los controles
+            // Reiniciar el objetivo del planeta y eliminar el botón
+            targetPlanet = null;
+            backButton.removeEventListener('click', zoomOutFromPlanet);
+            document.body.removeChild(backButton);
+            backButton = null;
         }
     }
 
     animateZoomOut();
 }
+
+
 
 // Agregar el evento de clic al documento
 window.addEventListener('mousedown', onDocumentMouseDown, false);
