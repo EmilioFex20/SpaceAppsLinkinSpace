@@ -225,11 +225,14 @@ function addPlanets() {
 
           // Añadir la animación para que la luna orbite alrededor del planeta
           function animateMoon() {
-              const time = Date.now() * 0.001;
-              const distance = planetData.moon.distance * distanceScale * 2;
-              moonMesh.position.x = Math.cos(time) * distance;
-              moonMesh.position.z = Math.sin(time) * distance;
-          }
+            const time = Date.now() * 0.001;
+            const distance = planetData.moon.distance * distanceScale * 2;
+            
+            // Cambiar la rotación para el plano XY
+            moonMesh.position.x = Math.cos(time) * distance;
+            moonMesh.position.y = Math.sin(time) * distance;
+        }
+        
 
           animateFunctions.push(animateMoon); // Añadir la animación de la luna a las funciones de animación
       }
