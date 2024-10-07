@@ -22,7 +22,7 @@ var ambientLight = new THREE.AmbientLight(0x404040, 2); // Aumentar la intensida
 scene.add(ambientLight);
 
 const textureLoader = new THREE.TextureLoader();
-const sunTexture = textureLoader.load('/textures/sun.jpg'); // Asegúrate de que la ruta sea correcta
+const sunTexture = textureLoader.load('./textures/sun.jpg'); // Asegúrate de que la ruta sea correcta
 
 // Crear el Sol
 function createSun() {
