@@ -236,7 +236,30 @@ function addPlanets() {
 
           animateFunctions.push(animateMoon); // Añadir la animación de la luna a las funciones de animación
       }
+      // **Añadir los anillos a Saturno**
+      if (body.name === "Saturn") {
+        // Definir los parámetros de los anillos
+        const innerRadius = planetDiameter * 1.2; // Radio interno ligeramente mayor que el diámetro del planeta
+        const outerRadius = planetDiameter * 2; // Radio externo según preferencia
+        const ringGeometry = new THREE.RingGeometry(innerRadius, outerRadius, 64);
 
+        // Crear un material semi-transparente para los anillos
+        const ringMaterial = new THREE.MeshBasicMaterial({
+            color: 0xaaaaaa,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.4
+        });
+
+        const ringMesh = new THREE.Mesh(ringGeometry, ringMaterial);
+
+        // Rotar los anillos para alinearlos con la inclinación de Saturno
+        ringMesh.rotation.x = Math.PI / 2; // Alinear con el plano XY
+        ringMesh.rotation.z = toRadians(planetData.i); // Aplicar inclinación orbital
+
+
+        planetGroup.add(ringMesh); // Añadir los anillos al grupo de Saturno
+    }
       scene.add(planetGroup);
     });
 }  
