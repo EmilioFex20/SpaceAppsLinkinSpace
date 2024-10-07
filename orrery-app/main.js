@@ -86,15 +86,20 @@ var asteroidScale = .1
 // Orbital Elements: a (semi-major axis), e (eccentricity), I (inclination),
 // L (mean longitude), long.peri. (longitude of perihelion), long.node. (longitude of ascending node)
 var orbitalElements = [
-  { name: "Mercury", a: 0.38709843, e: 0.20563661, i: 7.00559432, long_peri: 77.45771895, long_node: 48.33961819, period: 87.97, texture:"./textures/mercury.jpg" },
-  { name: "Venus", a: 0.72332102, e: 0.00676399, i: 3.39777545, long_peri: 131.76755713, long_node: 76.67261496, period: 224.70, texture:"./textures/venus.jpg" },
-  { name: "Earth", a: 1.00000018, e: 0.01673163, i: -0.00054346, long_peri: 102.93005885, long_node: -5.11260389, period: 365.25, texture:"./textures/earth.jpg" },
-  { name: "Mars", a: 1.52371243, e: 0.09336511, i: 1.85181869, long_peri: -23.91744784, long_node: 49.71320984, period: 686.98, texture:"./textures/mars.jpg" },
-  { name: "Jupiter", a: 5.20248019, e: 0.04853590, i: 1.29861416, long_peri: 14.27495244, long_node: 100.29282654, period: 4332.59, texture:"./textures/jupiter.jpg" },
-  { name: "Saturn", a: 9.54149883, e: 0.05550825, i: 2.49424102, long_peri: 92.86136063, long_node: 113.63998702, period: 10759.22, texture:"./textures/saturn.jpg" },
-  { name: "Uranus", a: 19.18797948, e: 0.04685740, i: 0.77298127, long_peri: 172.43404441, long_node: 73.96250215, period: 30688.5, texture:"./textures/uranus.jpg" },
-  { name: "Neptune", a: 30.06952752, e: 0.00895439, i: 1.77005520, long_peri: 46.68158724, long_node: 131.78635853, period: 60182, texture:"./textures/neptune.jpg" }
-];
+    { name: "Mercury", a: 0.38709843, e: 0.20563661, i: 7.00559432, long_peri: 77.45771895, long_node: 48.33961819, period: 87.97, texture:"./textures/mercury.jpg" },
+    { name: "Venus", a: 0.72332102, e: 0.00676399, i: 3.39777545, long_peri: 131.76755713, long_node: 76.67261496, period: 224.70, texture:"./textures/venus.jpg" },
+    { name: "Earth", a: 1.00000018, e: 0.01673163, i: -0.00054346, long_peri: 102.93005885, long_node: -5.11260389, period: 365.25, texture:"./textures/earth.jpg", 
+      moon: { size: 0.1, distance: 0.27, texture: "./textures/moon.jpg" } 
+    },
+    { name: "Mars", a: 1.52371243, e: 0.09336511, i: 1.85181869, long_peri: -23.91744784, long_node: 49.71320984, period: 686.98, texture:"./textures/mars.jpg" },
+    { name: "Jupiter", a: 5.20248019, e: 0.04853590, i: 1.29861416, long_peri: 14.27495244, long_node: 100.29282654, period: 4332.59, texture:"./textures/jupiter.jpg", 
+      moon: { size: 0.3, distance: 0.5, texture: "./textures/moon.jpg" } 
+    },
+    { name: "Saturn", a: 9.54149883, e: 0.05550825, i: 2.49424102, long_peri: 92.86136063, long_node: 113.63998702, period: 10759.22, texture:"./textures/saturn.jpg" },
+    { name: "Uranus", a: 19.18797948, e: 0.04685740, i: 0.77298127, long_peri: 172.43404441, long_node: 73.96250215, period: 30688.5, texture:"./textures/uranus.jpg" },
+    { name: "Neptune", a: 30.06952752, e: 0.00895439, i: 1.77005520, long_peri: 46.68158724, long_node: 131.78635853, period: 60182, texture:"./textures/neptune.jpg" }
+  ];
+  
 
 // Conversión de grados a radianes
 function toRadians(deg) {
@@ -234,29 +239,54 @@ function addPlanets() {
       // Corregir la orientación de la textura
       planetMesh.rotation.x = Math.PI / 2; // Rotar 90 grados en el eje Y
   
-      // Posición inicial del planeta
-      var initialPos = body.propagate(body.trueAnomaly);
-      planetMesh.position.set(initialPos[0], initialPos[1], initialPos[2]);
-      planetMesh.name = body.name;
-      scene.add(planetMesh);
+      const planetGroup = new THREE.Group();
+      planetGroup.add(planetMesh);
+      planetGroup.name = body.name;
+      
+      // Verificar si el planeta tiene una luna
+      const planetData = orbitalElements.find(p => p.name === body.name);
+      if (planetData.moon) {
+          // Crear la luna
+          var moonGeometry = new THREE.SphereGeometry(planetData.moon.size*10, 32, 32);
+          const moonTexture = textureLoader.load(planetData.moon.texture);
+          var moonMaterial = new THREE.MeshBasicMaterial({ map: moonTexture });
+          var moonMesh = new THREE.Mesh(moonGeometry, moonMaterial);
+
+          // Posicionar la luna respecto al planeta
+          moonMesh.position.set(planetData.moon.distance*2, 0, 0);
+          planetGroup.add(moonMesh); // Añadir la luna al grupo del planeta
+
+          // Añadir la animación para que la luna orbite alrededor del planeta
+          function animateMoon() {
+              const time = Date.now() * 0.001;
+              const distance = planetData.moon.distance * distanceScale *2;
+              moonMesh.position.x = Math.cos(time) * distance;
+              moonMesh.position.z = Math.sin(time) * distance;
+          }
+
+          animateFunctions.push(animateMoon); // Añadir la animación de la luna a las funciones de animación
+      }
+
+      scene.add(planetGroup);
     });
   }  
-
-
+const animateFunctions = [];
 // Animación para actualizar las posiciones de los planetas
 function animate() {
     requestAnimationFrame(animate);
 
     // Actualizar posiciones de los planetas
     heavenlyBodies.forEach(body => {
-        var planet = scene.getObjectByName(body.name);
-        var newPos = body.propagate(body.trueAnomaly);
-        planet.position.set(newPos[0], newPos[1], newPos[2]);
+        var planetGroup = scene.getObjectByName(body.name);
+        if(planetGroup){
+            var newPos = body.propagate(body.trueAnomaly);
+            planetGroup.position.set(newPos[0], newPos[1], newPos[2]);
 
-        // Incrementar la anomalía verdadera para animar la órbita
-        body.trueAnomaly += (2 * Math.PI / body.period) * 0.1; // Ajustar la velocidad según el periodo
-        if (body.trueAnomaly > 2 * Math.PI) {
-            body.trueAnomaly -= 2 * Math.PI;
+            // Incrementar la anomalía verdadera para animar la órbita
+            body.trueAnomaly += (2 * Math.PI / body.period) * 0.1; // Ajustar la velocidad según el periodo
+            if (body.trueAnomaly > 2 * Math.PI) {
+                body.trueAnomaly -= 2 * Math.PI;
+            }
         }
     });
 // Función para manejar clics en los planetas
@@ -428,6 +458,7 @@ window.addEventListener('mousedown', onDocumentMouseDown, false);
             
         }
     });
+    animateFunctions.forEach(fn=> fn());
     controls.update();
     renderer.render(scene, camera);
 }
